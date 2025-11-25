@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '../../../lib/swagger-fallback';
 import { IsString, IsNotEmpty } from 'class-validator';
 
 export class LoginDto {

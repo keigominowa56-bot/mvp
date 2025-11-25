@@ -1,6 +1,5 @@
 import { Controller, Post, Body, UseGuards, Get, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '../../lib/swagger-fallback';
 import { AuthService } from './auth.service';
 import { FirebaseAuthGuard } from './guards/firebase-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -8,7 +7,6 @@ import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
-@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

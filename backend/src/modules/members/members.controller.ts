@@ -19,7 +19,7 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Member } from '../../entities/member.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '../../lib/swagger-fallback';
 
 @ApiTags('Members')
 @Controller('members')

@@ -1,4 +1,7 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateActivityLogDto } from './create-activity-log.dto';
-
-export class UpdateActivityLogDto extends PartialType(CreateActivityLogDto) {}
+export class UpdateActivityLogDto {
+  action?: string;
+  actorId?: string;
+  memberId?: string;
+  externalId?: string;
+  metadata?: string;
+}

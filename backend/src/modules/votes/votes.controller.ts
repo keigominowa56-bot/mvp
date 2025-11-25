@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '../../lib/swagger-fallback';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

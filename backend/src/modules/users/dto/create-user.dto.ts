@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '../../../lib/swagger-fallback';
 import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean } from 'class-validator';
 
 export class CreateUserDto {

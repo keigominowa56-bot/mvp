@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '../../../lib/swagger-fallback';
 import { IsString, IsUUID, IsOptional, IsNumber, IsDateString, IsObject } from 'class-validator';
 
 export class CreateActivityFundDto {
