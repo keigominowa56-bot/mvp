@@ -9,7 +9,7 @@ frontend/.next/
 frontend/.turbo/
 frontend/out/
 
-# environment files
+# environment / secrets
 *.env
 *.env.local
 
