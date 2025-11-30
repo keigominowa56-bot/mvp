@@ -1,59 +1,83 @@
-import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+// 差し替え: actionOnTarget 内で hidden フィールドを扱う
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Report } from './report.entity';
-import { Comment } from '../comments/comment.entity'; // パスはプロジェクト構成に合わせて
-import { CreateReportDto } from './dto/create-report.dto';
+import { Report } from '../../entities/report.entity';
+import { Post } from '../posts/post.entity';
+import { Comment } from '../comments/comment.entity';
+import { User } from '../../entities/user.entity';
 
 @Injectable()
 export class ReportsService {
   constructor(
-    @InjectRepository(Report) private reportsRepo: Repository<Report>,
-    @InjectRepository(Comment) private commentsRepo: Repository<Comment>, // 追加
+    @InjectRepository(Report) private readonly reportRepo: Repository<Report>,
+    @InjectRepository(Post) private readonly postRepo: Repository<Post>,
+    @InjectRepository(Comment) private readonly commentRepo: Repository<Comment>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
-  async create(user: any, dto: CreateReportDto) {
-    // 重複通報禁止（任意）
-    const exists = await this.reportsRepo.findOne({
-      where: {
-        reporterId: user.id,
-        targetType: dto.targetType,
-        targetId: dto.targetId
-      }
-    });
-    if (exists) {
-      throw new BadRequestException('すでにこの対象を通報済みです');
-    }
-
-    if (dto.targetType === 'comment') {
-      const comment = await this.commentsRepo.findOne({ where: { id: dto.targetId } });
-      if (!comment) throw new BadRequestException('コメントが存在しません');
-      if (comment.authorId === user.id) {
-        throw new ForbiddenException('自分のコメントは通報できません');
-      }
-    }
-
-    const report = this.reportsRepo.create({
-      reporterId: user.id,
-      targetType: dto.targetType,
-      targetId: dto.targetId,
-      reason: dto.reason,
+  async create(data: {
+    reporterId: string;
+    targetType: 'post' | 'comment' | 'user';
+    targetId: string;
+    reasonCategory: 'abuse' | 'spam' | 'misinfo' | 'other';
+    reasonText?: string;
+  }) {
+    if (!data.targetType || !data.targetId) throw new BadRequestException('target required');
+    if (!data.reasonCategory) throw new BadRequestException('reasonCategory required');
+    const r = this.reportRepo.create({
+      reporterId: data.reporterId,
+      targetType: data.targetType,
+      targetId: data.targetId,
+      reasonCategory: data.reasonCategory,
+      reasonText: data.reasonText,
       status: 'open',
-      adminAction: null
     });
-
-    return this.reportsRepo.save(report);
+    return this.reportRepo.save(r);
   }
 
-  async findAllAdmin() {
-    return this.reportsRepo.find({ order: { createdAt: 'DESC' } });
+  async list(filters: { status?: string; targetType?: string; limit?: number }) {
+    const where: any = {};
+    if (filters.status) where.status = filters.status;
+    if (filters.targetType) where.targetType = filters.targetType;
+    return this.reportRepo.find({
+      where,
+      order: { createdAt: 'DESC' },
+      take: filters.limit || 100,
+    });
   }
 
-  async adminAction(id: number, action: string) {
-    const report = await this.reportsRepo.findOne({ where: { id } });
-    if (!report) return;
-    report.status = 'resolved';
-    report.adminAction = action;
-    return this.reportsRepo.save(report);
+  async updateStatus(id: string, status: Report['status'], adminNote?: string) {
+    const r = await this.reportRepo.findOne({ where: { id } });
+    if (!r) throw new BadRequestException('report not found');
+    r.status = status;
+    if (adminNote) r.adminNote = adminNote;
+    return this.reportRepo.save(r);
+  }
+
+  async actionOnTarget(report: Report, action: 'ban-user' | 'hide-post' | 'hide-comment') {
+    if (action === 'ban-user' && report.targetType === 'user') {
+      const u = await this.userRepo.findOne({ where: { id: report.targetId } });
+      if (u) {
+        u.status = 'banned';
+        await this.userRepo.save(u);
+      }
+    }
+    if (action === 'hide-post' && report.targetType === 'post') {
+      const p = await this.postRepo.findOne({ where: { id: report.targetId } });
+      if (p) {
+        p.hidden = true;
+        await this.postRepo.save(p);
+      }
+    }
+    if (action === 'hide-comment' && report.targetType === 'comment') {
+      const c = await this.commentRepo.findOne({ where: { id: report.targetId } });
+      if (c) {
+        c.hidden = true;
+        await this.commentRepo.save(c);
+      }
+    }
+    report.status = 'actioned';
+    return this.reportRepo.save(report);
   }
 }

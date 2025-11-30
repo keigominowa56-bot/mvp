@@ -1,48 +1,54 @@
-// backend/src/modules/auth/auth.service.ts
-
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 import { User } from '../../entities/user.entity';
-// import { JwtService } from '@nestjs/jwt'; // JwtServiceは存在すると仮定
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private readonly usersService: UsersService,
-        // private readonly jwtService: JwtService,
-    ) {}
-    
-    // loginDto.firebaseToken (string) を受け取り、ユーザー認証を行うメソッドを仮定
-    async validateUserByFirebaseToken(token: string): Promise<User> {
-        // 実際にはFirebase Admin SDKを使ってトークンを検証し、Userを返すロジック
-        const user = await this.usersService.findByFirebaseUid('mock-firebase-uid'); 
-        if (!user) {
-            throw new UnauthorizedException('ユーザーが見つかりません');
-        }
-        return user;
-    }
+  constructor(
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    private readonly jwt: JwtService,
+  ) {}
 
-    // エラーTS2345の修正: loginDto.firebaseToken (string) を受け取り、それをUserに変換してペイロードを生成
-    async login(token: string) {
-        // トークンからUserを取得
-        const user = await this.validateUserByFirebaseToken(token);
-        
-        // JWTペイロード生成（仮）
-        const payload = {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            displayName: user.displayName,
-            photoUrl: user.photoUrl, 
-            district: user.district, 
-        };
-        // return { access_token: this.jwtService.sign(payload) };
-        return { user: payload, access_token: 'mock-jwt-token' }; // 仮の戻り値
-    }
+  async register(data: {
+    email: string;
+    password: string;
+    name?: string;
+    age?: number;
+    addressPref?: string;
+    addressCity?: string;
+    phoneNumber?: string;
+  }) {
+    if (!data.email || !data.password) throw new BadRequestException('email & password required');
+    const exist = await this.userRepo.findOne({ where: { email: data.email } });
+    if (exist) throw new BadRequestException('email already registered');
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    const u = this.userRepo.create({
+      email: data.email,
+      passwordHash,
+      role: 'user',
+      name: data.name,
+      age: data.age,
+      addressPref: data.addressPref,
+      addressCity: data.addressCity,
+      phoneNumber: data.phoneNumber,
+      kycStatus: 'verified',
+      planTier: 'free',
+    });
+    const saved = await this.userRepo.save(u);
+    const token = this.jwt.sign({ sub: saved.id, email: saved.email, role: saved.role });
+    return { accessToken: token, user: { id: saved.id, email: saved.email } };
+  }
 
-    // エラーTS2339の修正: refreshTokenメソッドを追加
-    async refreshToken(userId: string): Promise<any> {
-        // 実際にはリフレッシュトークンロジックが入る
-        return { access_token: `new_token_for_${userId}` };
-    }
+  async login(email: string, password: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (user.status === 'banned') throw new UnauthorizedException('Account banned');
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) throw new UnauthorizedException('Invalid credentials');
+    const token = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
+    return { accessToken: token, user: { id: user.id, email: user.email, role: user.role } };
+  }
 }

@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivityLog } from './activity-log.entity';
-import { CreateActivityLogDto } from './dto/create-activity-log.dto';
-import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
+
+export type CreateActivityLogDto = {
+  memberId: string;
+  type: string;
+  detail?: string;
+  source?: string;
+  externalId?: string;
+  publishedAt?: Date;
+};
 
 @Injectable()
 export class ActivityLogsService {
@@ -13,38 +20,39 @@ export class ActivityLogsService {
   ) {}
 
   async create(dto: CreateActivityLogDto) {
-    const log = this.repo.create(dto);
-    return this.repo.save(log);
+    const entity = this.repo.create({
+      type: dto.type,
+      detail: dto.detail,
+      source: dto.source,
+      externalId: dto.externalId,
+      publishedAt: dto.publishedAt,
+      member: { id: dto.memberId } as any,
+    } as Partial<ActivityLog>);
+    return this.repo.save(entity);
   }
 
   async findAll() {
-    return this.repo.find({ order: { createdAt: 'DESC' } });
+    return this.repo.find({
+      relations: ['member'],
+      order: { publishedAt: 'DESC', createdAt: 'DESC' },
+      take: 200,
+    });
   }
 
   async findOne(id: string) {
-    const log = await this.repo.findOne({ where: { id } });
-    if (!log) throw new NotFoundException('ActivityLog not found');
-    return log;
-  }
-
-  async update(id: string, dto: UpdateActivityLogDto) {
-    const log = await this.findOne(id);
-    Object.assign(log, dto);
-    return this.repo.save(log);
-  }
-
-  async remove(id: string): Promise<{ deleted: true; id: string }> {
-    const log = await this.findOne(id);
-    await this.repo.remove(log);
-    return { deleted: true, id };
-  }
-
-  // 追加メソッド: コントローラや他サービスが使っている
-  async findByMemberId(memberId: string) {
-    return this.repo.find({ where: { memberId }, order: { createdAt: 'DESC' } });
+    return this.repo.findOne({
+      where: { id },
+      relations: ['member'],
+    });
   }
 
   async findByExternalId(externalId: string) {
+    if (!externalId) return null;
     return this.repo.findOne({ where: { externalId } });
+  }
+
+  async remove(id: string) {
+    await this.repo.delete(id);
+    return { deleted: true };
   }
 }

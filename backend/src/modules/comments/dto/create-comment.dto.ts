@@ -1,10 +1,9 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateCommentDto {
   @IsString()
-  body: string;
+  postId: string;
 
-  @IsOptional()
-  @IsArray()
-  images?: string[];
+  @IsString()
+  content: string;
 }

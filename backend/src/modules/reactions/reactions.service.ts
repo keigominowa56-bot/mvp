@@ -1,71 +1,45 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Reaction } from './reaction.entity';
-import { ReactDto } from './dto/react.dto';
+import { Reaction } from '../../entities/reaction.entity';
+import { ReactionType } from '../../enums/reaction-type.enum';
 
 @Injectable()
 export class ReactionsService {
-  constructor(@InjectRepository(Reaction) private repo: Repository<Reaction>) {}
+  constructor(
+    @InjectRepository(Reaction)
+    private readonly repo: Repository<Reaction>,
+  ) {}
 
-  private validateType(type: string) {
-    if (!['like', 'agree', 'disagree'].includes(type)) {
-      throw new BadRequestException('不正なリアクション種別');
-    }
+  async getSummary(targetId: string) {
+    const like = await this.repo.count({ where: { targetId, type: ReactionType.LIKE } });
+    const agree = await this.repo.count({ where: { targetId, type: ReactionType.AGREE } });
+    const disagree = await this.repo.count({ where: { targetId, type: ReactionType.DISAGREE } });
+    return { like, agree, disagree };
   }
 
-  async addOrToggle(user: any, dto: ReactDto) {
-    this.validateType(dto.type);
-    const existing = await this.repo.findOne({
-      where: {
-        userId: user.id,
-        targetType: dto.targetType,
-        targetId: dto.targetId
+  async getMyReaction(targetId: string, userId: string) {
+    const found = await this.repo.findOne({ where: { targetId, userId } });
+    return { reaction: found ? found.type : null };
+  }
+
+  async toggle(targetId: string, userId: string, type: ReactionType) {
+    const existing = await this.repo.findOne({ where: { targetId, userId } });
+    if (existing) {
+      if (existing.type === type) {
+        // 同じリアクション → 削除
+        await this.repo.remove(existing);
+        return { reaction: null };
+      } else {
+        // 違うリアクション → 更新
+        existing.type = type;
+        await this.repo.save(existing);
+        return { reaction: existing.type };
       }
-    });
-
-    // ない → 新規
-    if (!existing) {
-      const entity = this.repo.create({
-        userId: user.id,
-        targetType: dto.targetType,
-        targetId: dto.targetId,
-        type: dto.type
-      });
-      const saved = await this.repo.save(entity);
-      return { action: 'created', reaction: saved };
+    } else {
+      const created = this.repo.create({ targetId, userId, type });
+      await this.repo.save(created);
+      return { reaction: created.type };
     }
-
-    // 既存 type と同じ → 削除（トグルOFF）
-    if (existing.type === dto.type) {
-      await this.repo.delete(existing.id);
-      return { action: 'deleted', reaction: null };
-    }
-
-    // 別 type → 更新
-    existing.type = dto.type;
-    const updated = await this.repo.save(existing);
-    return { action: 'updated', reaction: updated };
-  }
-
-  async myReaction(user: any, targetType: string, targetId: number) {
-    return this.repo.findOne({
-      where: {
-        userId: user.id,
-        targetType,
-        targetId
-      }
-    });
-  }
-
-  async summary(targetType: string, targetId: number) {
-    const rows = await this.repo
-      .createQueryBuilder('r')
-      .select('r.type', 'type')
-      .addSelect('COUNT(*)', 'count')
-      .where('r.targetType = :t AND r.targetId = :i', { t: targetType, i: targetId })
-      .groupBy('r.type')
-      .getRawMany();
-    return rows;
   }
 }

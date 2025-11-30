@@ -1,52 +1,107 @@
-// backend/src/entities/user.entity.ts
-
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Member } from './member.entity';
 
 @Entity('users')
+@Index(['role'])
+@Index(['email'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // TypeORMはデフォルトでstringをvarcharと解釈するため、通常問題なし
   @Column({ unique: true })
   email: string;
 
-  @Column({ name: 'display_name', type: 'varchar', length: 255, nullable: true })
-  displayName: string | null;
+  @Column()
+  passwordHash: string;
 
-  // TypeORMはデフォルトでstringをvarcharと解釈するため、通常問題なし
+  @Column({ type: 'varchar', default: 'user' })
+  role: 'admin' | 'politician' | 'user';
+
+  // Account status (ban etc.)
+  @Column({ type: 'varchar', default: 'active' })
+  status: 'active' | 'banned';
+
+  // Verification
+  @Column({ type: 'boolean', default: false })
+  emailVerified: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  emailVerifyToken?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  phoneNumber?: string;
+
+  @Column({ type: 'boolean', default: false })
+  phoneVerified: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  phoneVerifyCode?: string;
+
+  // Profile
   @Column({ nullable: true })
-  role: string; // 'admin', 'user' など
+  name?: string;
 
-  @Column({ name: 'firebase_uid', type: 'varchar', length: 255, unique: true, nullable: true })
-  firebaseUid: string | null;
+  @Column({ nullable: true })
+  kana?: string;
 
-  // 🚨 修正: photoUrl に 'varchar' 型を明示的に指定
-  @Column({ name: 'photo_url', type: 'varchar', length: 255, nullable: true })
-  photoUrl: string | null; 
+  @Column({ type: 'int', nullable: true })
+  age?: number;
 
-  // 🚨 念のため district も 'varchar' 型を明示的に指定
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  district: string | null; 
-  
-  // MySQLでの 'tinyint(1)' 互換のため 'boolean' ではなく 'tinyint' を推奨します。
-  // TypeORMのデフォルトのbooleanマッピング（tinyint）を信用するか、明示的に tinyint を指定します。
-  @Column({ name: 'is_active', type: 'tinyint', default: 1 }) // tinyint(1) に対応
-  isActive: boolean;
+  @Column({ nullable: true })
+  addressPref?: string;
 
-  // 🚨 修正: TIMESTAMP(6) のエラーを回避するため、型を 'datetime' に変更
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
-  createdAt: Date;
+  @Column({ nullable: true })
+  addressCity?: string;
 
-  // 🚨 修正: TIMESTAMP(6) のエラーを回避するため、型を 'datetime' に変更
-  // datetime 型の場合、TypeORM が onUpdate: 'CURRENT_TIMESTAMP' を適切に処理することを期待
-  @UpdateDateColumn({ 
-    name: 'updated_at', 
-    type: 'datetime',
-  })
-  updatedAt: Date;
+  // Politician related
+  @Column({ type: 'varchar', nullable: true })
+  party?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  caucus?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  constituency?: string;
+
+  @Column({ type: 'int', nullable: true })
+  termCount?: number;
+
+  // Social links
+  @Column({ type: 'varchar', nullable: true })
+  xHandle?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  instagramHandle?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  facebookUrl?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  youtubeUrl?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  websiteUrl?: string;
+
+  // Biography (long text)
+  @Column({ type: 'text', nullable: true })
+  biography?: string;
+
+  // KYC / Plan
+  @Column({ nullable: true })
+  governmentIdUrl?: string;
+
+  @Column({ type: 'varchar', default: 'verified' })
+  kycStatus: 'pending' | 'verified' | 'rejected';
+
+  @Column({ type: 'varchar', default: 'free' })
+  planTier: 'free' | 'pro';
 
   @OneToMany(() => Member, (member) => member.user)
   members: Member[];
+
+  @CreateDateColumn({ type: 'datetime' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updatedAt: Date;
 }

@@ -1,41 +1,24 @@
-// backend/src/entities/vote.entity.ts
-
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Pledge } from './pledge.entity';
-import { Member } from './member.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Post } from '../modules/posts/post.entity';
 
 @Entity('votes')
 export class Vote {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'pledge_id' })
-  pledgeId: string;
+  @Column()
+  postId: string;
 
-  @Column({ name: 'member_id' }) 
-  memberId: string; 
+  @ManyToOne(() => Post, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'postId' })
+  post: Post;
 
-  @Column({ name: 'vote_type' })
-  voteType: 'support' | 'oppose';
+  @Column()
+  userId: string;
 
-  // 🚨 修正: 'timestamp with time zone' -> 'timestamp'
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'varchar' })
+  type: 'support' | 'oppose';
+
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
-
-  // 🚨 修正: 'timestamp with time zone' -> 'timestamp' (自動更新設定付き)
-  @Column({ 
-    name: 'updated_at', 
-    type: 'timestamp', 
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
-
-  @ManyToOne(() => Pledge, (pledge) => pledge.votes, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'pledge_id' })
-  pledge: Pledge;
-  
-  @ManyToOne(() => Member, (member) => member.votes)
-  @JoinColumn({ name: 'member_id' })
-  member: Member; // 投票したメンバー
 }

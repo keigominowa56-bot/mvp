@@ -1,29 +1,31 @@
-import { Controller, Post, Body, Get, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ReactionsService } from './reactions.service';
-import { ReactDto } from './dto/react.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ReactionType } from '../../enums/reaction-type.enum';
 
 @Controller('reactions')
+@UseGuards(JwtAuthGuard)
 export class ReactionsController {
-  constructor(private readonly svc: ReactionsService) {}
+  constructor(private readonly service: ReactionsService) {}
 
-  @Post()
-  addOrToggle(@Req() req: any, @Body() dto: ReactDto) {
-    return this.svc.addOrToggle(req.user, dto);
+  @Get('summary')
+  async summary(@Query('targetId') targetId: string) {
+    return this.service.getSummary(targetId);
   }
 
   @Get('my')
-  async my(
-    @Req() req: any,
-    @Query('targetType') targetType: string,
-    @Query('targetId') targetId: string
-  ) {
-    const reaction = await this.svc.myReaction(req.user, targetType, Number(targetId));
-    // 常に JSON （null を含む）を返す
-    return { reaction: reaction ? reaction : null };
+  async my(@Query('targetId') targetId: string, @Request() req) {
+    return this.service.getMyReaction(targetId, req.user.sub);
   }
 
-  @Get('summary')
-  summary(@Query('targetType') targetType: string, @Query('targetId') targetId: string) {
-    return this.svc.summary(targetType, Number(targetId));
+  @Post('toggle')
+  async toggle(
+    @Body('targetId') targetId: string,
+    @Body('type') type: 'like' | 'agree' | 'disagree',
+    @Request() req,
+  ) {
+    const result = await this.service.toggle(targetId, req.user.sub, type as ReactionType);
+    const summary = await this.service.getSummary(targetId);
+    return { ...result, summary };
   }
 }

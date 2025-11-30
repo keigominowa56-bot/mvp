@@ -1,34 +1,37 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
+import { Member } from '../../entities/member.entity';
 
 @Entity('activity_logs')
 export class ActivityLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // 何をしたか
-  @Column()
-  action: string;
+  @Column({ type: 'varchar' })
+  type: string; // e.g. 'post_created' | 'vote_cast' | 'external_feed_import'
 
-  // 行った人 (ユーザーID)
-  @Column()
-  actorId: string;
+  @Column({ type: 'text', nullable: true })
+  detail?: string;
 
-  // メンバーID (必要な場面があるなら)
-  @Column({ nullable: true })
-  memberId?: string;
+  @Column({ type: 'varchar', nullable: true })
+  source?: string; // 'twitter', 'manual', etc.
 
-  // 外部サービスの ID (ツイートなど)
   @Index()
-  @Column({ nullable: true })
-  externalId?: string;
+  @Column({ type: 'varchar', nullable: true })
+  externalId?: string; // external feed id (tweet id 等)
 
-  // その他の追加データ
-  @Column({ nullable: true, type: 'text' })
-  metadata?: string;
+  @Column({ type: 'datetime', nullable: true })
+  publishedAt?: Date; // 外部コンテンツ発生時刻
 
-  @CreateDateColumn()
+  @ManyToOne(() => Member, (m) => m.activityLogs, { onDelete: 'CASCADE' })
+  member: Member;
+
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

@@ -1,11 +1,12 @@
-import { IsString, IsNumber } from 'class-validator';
+import { IsString, IsIn } from 'class-validator';
 
 export class CreateReportDto {
   @IsString()
-  targetType: string; // 'post' | 'comment'
+  targetId: string;
 
-  @IsNumber()
-  targetId: number;
+  @IsString()
+  @IsIn(['comment', 'post', 'other'])
+  targetType: 'comment' | 'post' | 'other';
 
   @IsString()
   reason: string;

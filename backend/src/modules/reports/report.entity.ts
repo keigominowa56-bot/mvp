@@ -1,29 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('reports')
-@Unique(['reporterId', 'targetType', 'targetId'])
 export class Report {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
-  reporterId: number;
+  targetId: string;              // 通報対象 (comment/post 等の ID)
 
-  @Column()
-  targetType: string; // 'post' | 'comment' | 追加対象
+  @Column({ type: 'varchar' })
+  targetType: 'comment' | 'post' | 'other';
 
-  @Column()
-  targetId: number;
-
-  @Column()
+  @Column({ type: 'text' })
   reason: string;
 
-  @Column({ default: 'open' })
-  status: string; // open | resolved
+  @Column({ type: 'varchar', default: 'pending' })
+  status: 'pending' | 'accepted' | 'rejected';
 
-  @Column({ type: 'varchar', nullable: true })
-  adminAction: string | null; // hide | ignore 等
+  @Column({ nullable: true })
+  moderatorId?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

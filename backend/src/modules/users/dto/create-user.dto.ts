@@ -1,62 +1,20 @@
-import { ApiProperty } from '../../../lib/swagger-fallback';
-import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsIn, IsInt, Min } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty({
-    description: 'Firebase UID',
-    example: 'firebase-uid-123',
-  })
-  @IsString()
-  firebaseUid: string;
-
-  @ApiProperty({
-    description: 'User email address',
-    example: 'user@example.com',
-  })
   @IsEmail()
   email: string;
 
-  @ApiProperty({
-    description: 'User display name',
-    example: 'John Doe',
-  })
   @IsString()
-  displayName: string;
+  password: string;
 
-  @ApiProperty({
-    description: 'User photo URL',
-    example: 'https://example.com/photo.jpg',
-    required: false,
-  })
   @IsOptional()
-  @IsString()
-  photoUrl?: string;
+  @IsIn(['user', 'politician', 'admin'])
+  role?: 'user' | 'politician' | 'admin';
 
-  @ApiProperty({
-    description: 'User role',
-    enum: ['user', 'admin'],
-    default: 'user',
-    required: false,
-  })
-  @IsOptional()
-  @IsEnum(['user', 'admin'])
-  role?: 'user' | 'admin';
-
-  @ApiProperty({
-    description: 'User district',
-    example: 'Tokyo',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  district?: string;
-
-  @ApiProperty({
-    description: 'Whether user is active',
-    default: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsInt() @Min(18) age?: number;
+  @IsOptional() @IsString() addressPref?: string;
+  @IsOptional() @IsString() addressCity?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() governmentIdUrl?: string;
 }

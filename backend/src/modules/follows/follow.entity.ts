@@ -1,17 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('follows')
-@Unique(['fromUserId', 'toUserId'])
+@Index(['followerId', 'politicianId'], { unique: true })
 export class Follow {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
-  fromUserId: number;
+  followerId: string;
 
   @Column()
-  toUserId: number;
+  politicianId: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

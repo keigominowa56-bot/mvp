@@ -2,13 +2,16 @@ import { IsString, IsOptional, IsArray } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
+  title: string;
+
+  @IsString()
   body: string;
 
   @IsOptional()
   @IsArray()
-  images?: string[];
+  tags?: string[];
 
   @IsOptional()
   @IsString()
-  video?: string;
+  memberId?: string;
 }

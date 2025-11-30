@@ -1,77 +1,90 @@
-// backend/src/modules/users/users.service.ts
-
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { User } from '../../entities/user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+
+type CreateUserDto = {
+  email: string;
+  password: string;
+  name?: string;
+  age?: number;
+  addressPref?: string;
+  addressCity?: string;
+  phoneNumber?: string; // 旧 phone
+  governmentIdUrl?: string;
+  role?: 'user' | 'politician' | 'admin';
+};
+
+type UpdateUserDto = {
+  name?: string;
+  age?: number;
+  addressPref?: string;
+  addressCity?: string;
+  phoneNumber?: string;
+  governmentIdUrl?: string;
+  role?: 'user' | 'politician' | 'admin';
+  status?: 'active' | 'banned';
+};
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(@InjectRepository(User) private readonly userRepository: Repository<User>) {}
 
-  // エラーTS2339の修正: createメソッドを追加 (controller, seed-dataで使用)
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
-  }
+  async create(dto: CreateUserDto) {
+    if (!dto.email || !dto.password) throw new BadRequestException('email & password required');
+    const exist = await this.userRepository.findOne({ where: { email: dto.email } });
+    if (exist) throw new BadRequestException('email already exists');
 
-  // エラーTS2339の修正: updateメソッドを追加 (controllerで使用)
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
-    this.userRepository.merge(user, updateUserDto);
-    return this.userRepository.save(user);
-  }
-
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      where: { isActive: true }, 
-      select: ['id', 'email', 'displayName', 'photoUrl', 'role', 'district', 'createdAt'],
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const entity = this.userRepository.create({
+      email: dto.email,
+      passwordHash,
+      name: dto.name,
+      age: dto.age,
+      addressPref: dto.addressPref,
+      addressCity: dto.addressCity,
+      phoneNumber: dto.phoneNumber,
+      governmentIdUrl: dto.governmentIdUrl,
+      role: dto.role || 'user',
+      status: 'active',
+      kycStatus: 'verified',
+      planTier: 'free',
     });
+
+    return this.userRepository.save(entity);
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id, isActive: true }, 
-      select: ['id', 'email', 'displayName', 'photoUrl', 'role', 'district', 'createdAt'],
-    });
-    if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
-    }
-    return user;
-  }
-  
-  async findByFirebaseUid(firebaseUid: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { firebaseUid, isActive: true }, 
-    });
-    if (!user) {
-      throw new NotFoundException(`User with Firebase UID "${firebaseUid}" not found`);
-    }
-    return user;
-  }
-  
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
-        where: { email, isActive: true }, 
-    });
+  async update(id: string, dto: UpdateUserDto) {
+    const u = await this.userRepository.findOne({ where: { id } });
+    if (!u) throw new BadRequestException('user not found');
+
+    if (dto.name !== undefined) u.name = dto.name || undefined;
+    if (dto.age !== undefined) u.age = dto.age!;
+    if (dto.addressPref !== undefined) u.addressPref = dto.addressPref || undefined;
+    if (dto.addressCity !== undefined) u.addressCity = dto.addressCity || undefined;
+    if (dto.phoneNumber !== undefined) u.phoneNumber = dto.phoneNumber || undefined;
+    if (dto.governmentIdUrl !== undefined) u.governmentIdUrl = dto.governmentIdUrl || undefined;
+    if (dto.role !== undefined) u.role = dto.role!;
+    if (dto.status !== undefined) u.status = dto.status!;
+
+    return this.userRepository.save(u);
   }
 
-  async remove(id: string): Promise<void> {
-    const user = await this.findOne(id);
-    user.isActive = false; 
-    await this.userRepository.save(user);
+  async findAll() {
+    return this.userRepository.find({ order: { createdAt: 'DESC' }, take: 500 });
   }
 
-  async getStats(): Promise<any> {
-    const [totalActive, totalAdmin] = await Promise.all([
-      this.userRepository.count({ where: { isActive: true } }), 
-      this.userRepository.count({ where: { role: 'admin', isActive: true } }), 
-    ]);
-    return { totalActive, totalAdmin };
+  async findOne(id: string) {
+    const u = await this.userRepository.findOne({ where: { id } });
+    if (!u) throw new BadRequestException('user not found');
+    return u;
+  }
+
+  async remove(id: string) {
+    const u = await this.userRepository.findOne({ where: { id } });
+    if (!u) throw new BadRequestException('user not found');
+    await this.userRepository.remove(u);
+    return { deleted: true, id };
   }
 }

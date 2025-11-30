@@ -1,4 +1,10 @@
+import { IsString, IsIn } from 'class-validator';
+
 export class CreateVoteDto {
-  pledgeId: string;
-  memberId: string;
+  @IsString()
+  postId: string;
+
+  @IsString()
+  @IsIn(['support', 'oppose'])
+  type: 'support' | 'oppose';
 }

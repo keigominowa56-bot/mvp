@@ -1,22 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('comments')
+@Index(['postId'])
 export class Comment {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
-  postId: number;
+  postId: string;
 
-  @Column()
-  authorId: number;
+  @Column({ nullable: true })
+  authorId?: string;
 
   @Column({ type: 'text' })
-  body: string;
+  content: string;
 
-  @Column({ type: 'simple-json', nullable: true })
-  media: { images?: string[] } | null;
+  @Column({ type: 'boolean', default: false })
+  hidden: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

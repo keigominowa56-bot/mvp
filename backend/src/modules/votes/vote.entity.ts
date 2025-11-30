@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Post } from '../posts/post.entity';
 
 @Entity('votes')
 export class Vote {
@@ -6,11 +7,18 @@ export class Vote {
   id: string;
 
   @Column()
-  pledgeId: string;
+  postId: string;
+
+  @ManyToOne(() => Post, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'postId' })
+  post: Post;
 
   @Column()
-  memberId: string;
+  userId: string;
 
-  @CreateDateColumn()
+  @Column({ type: 'varchar' })
+  type: 'support' | 'oppose';
+
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }
