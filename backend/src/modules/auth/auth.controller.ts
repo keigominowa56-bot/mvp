@@ -5,6 +5,8 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from '../../entities/user.entity';
 import { randomBytes } from 'crypto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -26,16 +28,14 @@ export class AuthController {
     },
   ) {
     const result = await this.auth.register(body);
-    // 生成されたユーザーにメール検証トークンと電話コード付与
     const user = await this.userRepo.findOne({ where: { email: body.email } });
     if (user) {
       user.emailVerifyToken = randomBytes(16).toString('hex');
       if (body.phoneNumber) {
         user.phoneNumber = body.phoneNumber;
-        user.phoneVerifyCode = (Math.floor(100000 + Math.random() * 900000)).toString(); // 6桁
+        user.phoneVerifyCode = (Math.floor(100000 + Math.random() * 900000)).toString();
       }
       await this.userRepo.save(user);
-      // 擬似送信ログ
       console.log('[email verify] token=', user.emailVerifyToken, 'email=', user.email);
       if (user.phoneVerifyCode) {
         console.log('[phone verify] code=', user.phoneVerifyCode, 'phone=', user.phoneNumber);
@@ -83,30 +83,25 @@ export class AuthController {
     return this.auth.login(body.email, body.password);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // 正式仕様: DB照会してユーザー詳細を返す（認証必須）
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me')
   async me(@Request() req: any) {
-    const u = await this.userRepo.findOne({ where: { id: req.user.sub } });
-    if (!u) throw new BadRequestException('user not found');
+    const userId = req.user?.sub;
+    if (!userId) throw new BadRequestException('missing user');
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('user not found');
+    // 必要に応じて返すフィールドを限定
     return {
-      id: u.id,
-      email: u.email,
-      role: u.role,
-      status: u.status,
-      emailVerified: u.emailVerified,
-      phoneVerified: u.phoneVerified,
-      name: u.name,
-      party: u.party,
-      constituency: u.constituency,
-      termCount: u.termCount,
-      xHandle: u.xHandle,
-      instagramHandle: u.instagramHandle,
-      facebookUrl: u.facebookUrl,
-      youtubeUrl: u.youtubeUrl,
-      websiteUrl: u.websiteUrl,
-      addressPref: u.addressPref,
-      addressCity: u.addressCity,
-      createdAt: u.createdAt,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      addressPref: user.addressPref,
+      addressCity: user.addressCity,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
+      createdAt: user.createdAt,
     };
   }
 }

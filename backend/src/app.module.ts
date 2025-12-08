@@ -1,32 +1,51 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
+import { ConfigModule } from '@nestjs/config';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-
+import { DevModule } from './auth/dev.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { AdminModule } from './modules/admin/admin.module';
 import { PostsModule } from './modules/posts/posts.module';
-import { DevModule } from './auth/dev.module'; // 先ほど作成
+import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { UsersModule } from './modules/users/users.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PoliticiansModule } from './modules/politicians/politicians.module';
+import { FollowsModule } from './modules/follows/follows.module';
+import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
+import { ModerationModule } from './modules/moderation/moderation.module';
+import { HealthModule } from './health/health.module';
+
+const isProd = process.env.NODE_ENV === 'production';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
-      type: 'better-sqlite3',
+      type: 'sqlite',
       database: process.env.DB_FILE || 'dev.sqlite',
       synchronize: true,
-      // 重要: プロジェクト内の全エンティティを自動登録
       entities: [join(__dirname, '/**/*.entity.{ts,js}')],
-      // autoLoadEntities: true, // 併用してもOKですが、上の entities だけで十分です
     }),
+    ...(isProd ? [] : [DevModule]),
     AuthModule,
-    AdminModule,
     PostsModule,
-    DevModule,
-    // 他に Policies / Funding / Reports / Comments などのモジュールがある場合は引き続き imports に含めてください
+    RecommendationsModule,
+    NotificationsModule,
+    UsersModule,
+    AnalyticsModule,
+    PoliticiansModule,
+    FollowsModule,
+    ActivityLogsModule,
+    ModerationModule,
+    HealthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

@@ -1,40 +1,44 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
 import { NgWord } from '../../entities/ng-word.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class NgWordsService {
-  constructor(@InjectRepository(NgWord) private readonly repo: Repository<NgWord>) {}
+  constructor(
+    @InjectRepository(NgWord)
+    private readonly repo: Repository<NgWord>,
+  ) {}
 
-  async list(): Promise<NgWord[]> {
-    return this.repo.find({ order: { word: 'ASC' } });
+  // 一覧
+  async list(): Promise<string[]> {
+    const rows = await this.repo.find();
+    return rows.map((r) => r.word.toLowerCase());
   }
 
+  // 追加（重複は無視する）
   async add(word: string) {
-    word = (word || '').trim();
-    if (!word) throw new BadRequestException('word required');
-    const exist = await this.repo.findOne({ where: { word } });
-    if (exist) return exist;
-    const nw = this.repo.create({ word });
-    return this.repo.save(nw);
+    const w = word.trim().toLowerCase();
+    if (!w) return;
+    const existing = await this.repo.findOne({ where: { word: w } });
+    if (existing) return existing;
+    const row = this.repo.create({ word: w });
+    return this.repo.save(row);
   }
 
+  // 削除（ID指定）
   async remove(id: string) {
-    const w = await this.repo.findOne({ where: { id } });
-    if (!w) throw new BadRequestException('not found');
-    await this.repo.remove(w);
-    return { deleted: true };
+    const row = await this.repo.findOne({ where: { id } });
+    if (!row) return { ok: true };
+    await this.repo.remove(row);
+    return { ok: true };
   }
 
-  async containsNg(text: string): Promise<string | null> {
-    if (!text) return null;
+  // 含有判定
+  async containsNg(input: string): Promise<{ found: string[] }> {
     const words = await this.list();
-    const lower = text.toLowerCase();
-    for (const w of words) {
-      const pattern = w.word.toLowerCase();
-      if (pattern && lower.includes(pattern)) return w.word;
-    }
-    return null;
+    const lower = input.toLowerCase();
+    const found = words.filter((w) => lower.includes(w));
+    return { found };
   }
 }

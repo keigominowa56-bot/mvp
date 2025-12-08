@@ -1,40 +1,14 @@
 {
-  "name": "citizen-voice-backend",
-  "version": "0.1.0",
+  "name": "backend",
+  "version": "1.0.0",
   "private": true,
-  "license": "MIT",
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main.js",
     "build": "nest build",
-    "lint": "eslint \"src/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "test": "echo \"(tests pending)\""
+    "prestart:prod": "npm run build",
+    "start:prod": "node dist/main.js"
   },
-  "dependencies": {
-    "@nestjs/common": "^10.0.0",
-    "@nestjs/core": "^10.0.0",
-    "@nestjs/jwt": "^10.0.0",
-    "@nestjs/passport": "^10.0.0",
-    "@nestjs/typeorm": "^10.0.0",
-    "better-sqlite3": "^9.0.0",
-    "bcrypt": "^5.1.1",
-    "dayjs": "^1.11.11",
-    "passport": "^0.6.0",
-    "passport-jwt": "^4.0.1",
-    "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1",
-    "twitter-api-v2": "^1.15.0",
-    "typeorm": "^0.3.20"
-  },
-  "devDependencies": {
-    "@nestjs/cli": "^10.0.0",
-    "@nestjs/schematics": "^10.0.0",
-    "@nestjs/testing": "^10.0.0",
-    "@types/node": "^20.10.0",
-    "typescript": "^5.3.3",
-    "eslint": "^9.0.0",
-    "prettier": "^3.1.0"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }

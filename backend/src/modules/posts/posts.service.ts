@@ -1,106 +1,128 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between, MoreThanOrEqual } from 'typeorm';
 import { Post } from './post.entity';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { NgWordsService } from '../moderation/ng-words.service';
+import { ActivityLogService } from '../activity-logs/activity-log.service';
 import { User } from '../../entities/user.entity';
-
-interface CreatePostDto {
-  authorId?: string;
-  title?: string;
-  body: string;
-  tags?: string[];
-  regionPref?: string;
-  regionCity?: string;
-}
-
-interface UpdatePostDto {
-  title?: string;
-  body?: string;
-  tags?: string[];
-  regionPref?: string;
-  regionCity?: string;
-  hidden?: boolean;
-}
 
 @Injectable()
 export class PostsService {
   constructor(
-    @InjectRepository(Post) private readonly postRepo: Repository<Post>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Post)
+    private readonly repo: Repository<Post>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
+    private readonly ng: NgWordsService,
+    private readonly logs: ActivityLogService,
   ) {}
 
-  /**
-   * 投稿作成（politician本人 or admin）
-   */
-  async create(dto: CreatePostDto, actorId: string) {
-    if (!dto.body || !dto.body.trim()) {
-      throw new BadRequestException('body required');
-    }
+  async create(userId: string, dto: CreatePostDto) {
+    const targetText = `${dto.title || ''} ${dto.body}`;
+    const { found } = await this.ng.containsNg(targetText);
+    if (found.length) throw new UnprocessableEntityException(`NGワード: ${found.join(', ')}`);
 
-    const actor = await this.userRepo.findOne({ where: { id: actorId } });
-    if (!actor) throw new ForbiddenException('actor not found');
+    const author = await this.users.findOne({ where: { id: userId } });
+    if (!author) throw new Error('User not found');
 
-    const authorId = dto.authorId || actorId;
-    const author = await this.userRepo.findOne({ where: { id: authorId } });
-    if (!author) throw new BadRequestException('author not found');
+    const hidden =
+      (dto as any).hidden !== undefined
+        ? Boolean((dto as any).hidden)
+        : dto.visibility
+        ? dto.visibility === 'hidden'
+        : false;
 
-    // 権限チェック
-    if (actor.role === 'admin') {
-      // adminは任意名義OK
-    } else if (actor.role === 'politician') {
-      if (actor.id !== authorId) {
-        throw new ForbiddenException('politician can only post as themselves');
-      }
-    } else {
-      throw new ForbiddenException('only admin or politician can post');
-    }
-
-    const post = this.postRepo.create({
-      authorId,
-      title: dto.title,
+    const post = this.repo.create({
       body: dto.body,
-      tags: dto.tags,
+      title: dto.title,
+      postCategory: dto.postCategory ?? 'activity',
+      hidden,
       regionPref: dto.regionPref,
       regionCity: dto.regionCity,
-      hidden: false,
+      author,
+      deletedAt: null,
     });
 
-    return this.postRepo.save(post);
+    const saved = await this.repo.save(post);
+    await this.logs.log(userId, 'post_created', { postId: saved.id, postCategory: saved.postCategory, hidden: saved.hidden });
+    return saved;
   }
 
-  /**
-   * 投稿更新（投稿者本人 or admin）
-   */
-  async update(id: string, dto: UpdatePostDto, actorId: string) {
-    const post = await this.postRepo.findOne({ where: { id } });
-    if (!post) throw new BadRequestException('post not found');
+  async update(userId: string, id: string, dto: UpdatePostDto) {
+    const post = await this.repo.findOne({ where: { id }, relations: ['author'] });
+    if (!post) throw new UnprocessableEntityException('Post not found');
 
-    const actor = await this.userRepo.findOne({ where: { id: actorId } });
-    if (!actor) throw new ForbiddenException('actor not found');
-
-    if (actor.role !== 'admin' && actor.id !== post.authorId) {
-      throw new ForbiddenException('not allowed to update this post');
+    // 自分の投稿以外の編集は原則不可（adminは別途ロールで許可する想定）
+    if (post.author.id !== userId) {
+      // ここで user の role を見て admin であれば許可、などのチェックを入れても良い
+      // 今回は自分以外は拒否
+      throw new ForbiddenException('You cannot edit this post');
     }
 
-    if (dto.title !== undefined) post.title = dto.title || undefined;
+    const toUpdate: Partial<Post> = {};
+
     if (dto.body !== undefined) {
-      if (!dto.body.trim()) throw new BadRequestException('body required');
-      post.body = dto.body;
+      const { found } = await this.ng.containsNg(dto.body);
+      if (found.length) throw new UnprocessableEntityException(`NGワード(body): ${found.join(', ')}`);
+      toUpdate.body = dto.body;
     }
-    if (dto.tags !== undefined) post.tags = dto.tags;
-    if (dto.regionPref !== undefined) post.regionPref = dto.regionPref || undefined;
-    if (dto.regionCity !== undefined) post.regionCity = dto.regionCity || undefined;
-    if (dto.hidden !== undefined) post.hidden = !!dto.hidden;
+    if (dto.title !== undefined) {
+      const { found } = await this.ng.containsNg(dto.title);
+      if (found.length) throw new UnprocessableEntityException(`NGワード(title): ${found.join(', ')}`);
+      toUpdate.title = dto.title;
+    }
+    if (dto.postCategory !== undefined) toUpdate.postCategory = dto.postCategory;
+    if ((dto as any).hidden !== undefined) toUpdate.hidden = Boolean((dto as any).hidden);
+    else if (dto.visibility !== undefined) toUpdate.hidden = dto.visibility === 'hidden';
+    if (dto.regionPref !== undefined) toUpdate.regionPref = dto.regionPref;
+    if (dto.regionCity !== undefined) toUpdate.regionCity = dto.regionCity;
 
-    return this.postRepo.save(post);
+    await this.repo.update({ id }, toUpdate);
+    const updated = await this.repo.findOne({ where: { id } });
+    await this.logs.log(userId, 'post_updated', { postId: id, changed: Object.keys(toUpdate) });
+    return updated;
   }
 
-  /**
-   * 単一取得（必要なら拡張）
-   */
-  async findOne(id: string) {
-    const p = await this.postRepo.findOne({ where: { id } });
-    if (!p) throw new BadRequestException('post not found');
-    return p;
+  async softDelete(userId: string, id: string) {
+    const post = await this.repo.findOne({ where: { id }, relations: ['author'] });
+    if (!post) throw new UnprocessableEntityException('Post not found');
+    if (post.author.id !== userId) throw new ForbiddenException('You cannot delete this post');
+    if (post.deletedAt) return post;
+    post.deletedAt = new Date();
+    const saved = await this.repo.save(post);
+    await this.logs.log(userId, 'post_deleted', { postId: id });
+    return saved;
+  }
+
+  async restore(userId: string, id: string) {
+    const post = await this.repo.findOne({ where: { id }, relations: ['author'] });
+    if (!post) throw new UnprocessableEntityException('Post not found');
+    if (post.author.id !== userId) throw new ForbiddenException('You cannot restore this post');
+    if (!post.deletedAt) return post;
+    post.deletedAt = null;
+    const saved = await this.repo.save(post);
+    await this.logs.log(userId, 'post_restored', { postId: id });
+    return saved;
+  }
+
+  async getFeed(filter: { category?: 'policy' | 'activity'; pref?: string; city?: string }) {
+    const qb = this.repo
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.author', 'author')
+      .where('p.hidden = :hidden', { hidden: false })
+      .andWhere('p.deletedAt IS NULL')
+      .orderBy('p.createdAt', 'DESC');
+
+    if (filter.category) qb.andWhere('p.postCategory = :cat', { cat: filter.category });
+    if (filter.pref) qb.andWhere('p.regionPref = :pref', { pref: filter.pref });
+    if (filter.city) qb.andWhere('p.regionCity = :city', { city: filter.city });
+
+    return qb.getMany();
+  }
+
+  async getById(id: string) {
+    return this.repo.findOne({ where: { id } });
   }
 }

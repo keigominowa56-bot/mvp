@@ -1,31 +1,27 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
 import { NgWordsService } from './ng-words.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@Controller('admin/ng-words')
-@UseGuards(JwtAuthGuard)
+@Controller('moderation/ng-words')
 export class NgWordsController {
   constructor(private readonly svc: NgWordsService) {}
 
-  private ensureAdmin(req: any) {
-    if (req.user?.role !== 'admin') throw new ForbiddenException('Admins only');
-  }
-
   @Get()
-  async list(@Request() req: any) {
-    this.ensureAdmin(req);
+  async list() {
     return this.svc.list();
   }
 
+  // 管理者のみ追加できるようにする（必要に応じて）
+  @Roles('admin')
   @Post()
-  async add(@Body('word') word: string, @Request() req: any) {
-    this.ensureAdmin(req);
+  async add(@Body() body: { word: string }) {
+    const { word } = body;
     return this.svc.add(word);
   }
 
+  @Roles('admin')
   @Delete(':id')
-  async remove(@Param('id') id: string, @Request() req: any) {
-    this.ensureAdmin(req);
+  async remove(@Param('id') id: string) {
     return this.svc.remove(id);
   }
 }

@@ -1,17 +1,26 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 
 export class CreatePostDto {
-  @IsString()
-  title: string;
-
   @IsString()
   body: string;
 
   @IsOptional()
-  @IsArray()
-  tags?: string[];
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsIn(['policy', 'activity'])
+  postCategory?: 'policy' | 'activity';
+
+  @IsOptional()
+  @IsIn(['public', 'hidden'])
+  visibility?: 'public' | 'hidden';
 
   @IsOptional()
   @IsString()
-  memberId?: string;
+  regionPref?: string;
+
+  @IsOptional()
+  @IsString()
+  regionCity?: string;
 }

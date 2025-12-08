@@ -1,90 +1,67 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import { Repository, FindOptionsWhere } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import { User } from '../../entities/user.entity';
-
-type CreateUserDto = {
-  email: string;
-  password: string;
-  name?: string;
-  age?: number;
-  addressPref?: string;
-  addressCity?: string;
-  phoneNumber?: string; // 旧 phone
-  governmentIdUrl?: string;
-  role?: 'user' | 'politician' | 'admin';
-};
-
-type UpdateUserDto = {
-  name?: string;
-  age?: number;
-  addressPref?: string;
-  addressCity?: string;
-  phoneNumber?: string;
-  governmentIdUrl?: string;
-  role?: 'user' | 'politician' | 'admin';
-  status?: 'active' | 'banned';
-};
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly userRepository: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly users: Repository<User>,
+  ) {}
 
-  async create(dto: CreateUserDto) {
-    if (!dto.email || !dto.password) throw new BadRequestException('email & password required');
-    const exist = await this.userRepository.findOne({ where: { email: dto.email } });
-    if (exist) throw new BadRequestException('email already exists');
-
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-    const entity = this.userRepository.create({
-      email: dto.email,
-      passwordHash,
-      name: dto.name,
-      age: dto.age,
-      addressPref: dto.addressPref,
-      addressCity: dto.addressCity,
-      phoneNumber: dto.phoneNumber,
-      governmentIdUrl: dto.governmentIdUrl,
-      role: dto.role || 'user',
-      status: 'active',
-      kycStatus: 'verified',
-      planTier: 'free',
-    });
-
-    return this.userRepository.save(entity);
+  async findAll(): Promise<User[]> {
+    return this.users.find({ order: { createdAt: 'DESC' } as any });
   }
 
-  async update(id: string, dto: UpdateUserDto) {
-    const u = await this.userRepository.findOne({ where: { id } });
-    if (!u) throw new BadRequestException('user not found');
-
-    if (dto.name !== undefined) u.name = dto.name || undefined;
-    if (dto.age !== undefined) u.age = dto.age!;
-    if (dto.addressPref !== undefined) u.addressPref = dto.addressPref || undefined;
-    if (dto.addressCity !== undefined) u.addressCity = dto.addressCity || undefined;
-    if (dto.phoneNumber !== undefined) u.phoneNumber = dto.phoneNumber || undefined;
-    if (dto.governmentIdUrl !== undefined) u.governmentIdUrl = dto.governmentIdUrl || undefined;
-    if (dto.role !== undefined) u.role = dto.role!;
-    if (dto.status !== undefined) u.status = dto.status!;
-
-    return this.userRepository.save(u);
-  }
-
-  async findAll() {
-    return this.userRepository.find({ order: { createdAt: 'DESC' }, take: 500 });
-  }
-
-  async findOne(id: string) {
-    const u = await this.userRepository.findOne({ where: { id } });
-    if (!u) throw new BadRequestException('user not found');
+  async findOne(id: string): Promise<any> {
+    const u: any = await this.users.findOne({ where: { id } as FindOptionsWhere<User> });
+    if (!u) throw new NotFoundException('User not found');
     return u;
   }
 
-  async remove(id: string) {
-    const u = await this.userRepository.findOne({ where: { id } });
-    if (!u) throw new BadRequestException('user not found');
-    await this.userRepository.remove(u);
-    return { deleted: true, id };
+  async create(body: any): Promise<any> {
+    if (!body.email) throw new BadRequestException('email is required');
+    if (!body.password) throw new BadRequestException('password is required');
+
+    const existing = await this.users.findOne({ where: { email: body.email } as FindOptionsWhere<User> });
+    if (existing) throw new BadRequestException('email already exists');
+
+    const hash = await bcrypt.hash(String(body.password), 10);
+    const user = this.users.create({
+      email: String(body.email),
+      passwordHash: hash,
+      displayName: body.displayName ?? '',
+      role: body.role ?? 'user',
+    } as any);
+    const saved: any = await this.users.save(user as any);
+    return saved;
+  }
+
+  async update(id: string, body: any): Promise<any> {
+    const user: any = await this.findOne(id);
+    if (body.displayName !== undefined) user.displayName = String(body.displayName);
+    if (body.role !== undefined) user.role = body.role;
+    if (body.email !== undefined) user.email = String(body.email);
+    const saved: any = await this.users.save(user as any);
+    return saved;
+  }
+
+  async remove(id: string): Promise<{ id: string; deleted: true }> {
+    const user = await this.findOne(id);
+    await this.users.remove(user);
+    return { id, deleted: true };
+  }
+
+  async updatePassword(userId: string, newPassword: string) {
+    const user: any = await this.findOne(userId);
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = hash;
+    await this.users.save(user as any);
+    return { ok: true, userId };
+  }
+
+  async validatePassword(raw: string, hash: string) {
+    return bcrypt.compare(raw, hash);
   }
 }

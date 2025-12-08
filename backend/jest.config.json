@@ -1,0 +1,11 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "testMatch": ["**/__tests__/**/*.e2e.ts"],
+  "moduleFileExtensions": ["ts", "js", "json"],
+  "globals": {
+    "ts-jest": {
+      "isolatedModules": true
+    }
+  }
+}
