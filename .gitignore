@@ -17,23 +17,22 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
+
+# Editors
 .vscode/
 
-# Environment & secrets
+# Env & secrets
 .env
 .env.*
 !.env.example
 backend/.env
 backend/.env.*
 
-# Databases (SQLite等)
+# Databases
 *.sqlite
 *.db
 
-# Backend (NestJS)
-backend/dist/
-
-# Frontend (Next.js / Turborepo)
+# Frontend (Next.js)
 frontend/.next/
 frontend/.turbo/
 frontend/out/
