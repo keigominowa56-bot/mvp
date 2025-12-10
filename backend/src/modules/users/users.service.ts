@@ -1,6 +1,8 @@
+// backend/src/modules/users/users.service.ts
+
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, FindOptionsWhere, In } from 'typeorm'; // 👈 In をインポート
 import * as bcrypt from 'bcryptjs';
 import { User } from '../../entities/user.entity';
 
@@ -19,6 +21,24 @@ export class UsersService {
     if (!u) throw new NotFoundException('User not found');
     return u;
   }
+  
+  // 👇 メンション解決のための新しいメソッドを追加 👇
+  /**
+   * 複数のユーザー名（username）からユーザーIDを取得します。
+   * メンション機能で使用されます。
+   * @param usernames メンションされたユーザー名の配列（例: ['keigominowa56', 'politician1']）
+   * @returns ユーザーエンティティの配列
+   */
+  async findByUsernames(usernames: string[]): Promise<User[]> {
+    // ユーザー名フィールドが存在する前提で検索
+    return this.users.find({
+      where: {
+        username: In(usernames), // 配列内のいずれかのユーザー名に一致
+      } as FindOptionsWhere<User>,
+      select: ['id', 'username', 'displayName'], // 必要な情報のみを選択
+    });
+  }
+  // 👆 メンション解決のための新しいメソッドを追加 👆
 
   async create(body: any): Promise<any> {
     if (!body.email) throw new BadRequestException('email is required');
@@ -27,12 +47,15 @@ export class UsersService {
     const existing = await this.users.findOne({ where: { email: body.email } as FindOptionsWhere<User> });
     if (existing) throw new BadRequestException('email already exists');
 
+    // ⚠️ 補足: ここで body.username のチェックと設定も追加すると良いでしょう
+    
     const hash = await bcrypt.hash(String(body.password), 10);
     const user = this.users.create({
       email: String(body.email),
       passwordHash: hash,
       displayName: body.displayName ?? '',
       role: body.role ?? 'user',
+      // username: body.username, // 👈 ユーザーエンティティとDTOにusernameがある場合はこれを追加
     } as any);
     const saved: any = await this.users.save(user as any);
     return saved;
@@ -43,6 +66,7 @@ export class UsersService {
     if (body.displayName !== undefined) user.displayName = String(body.displayName);
     if (body.role !== undefined) user.role = body.role;
     if (body.email !== undefined) user.email = String(body.email);
+    // if (body.username !== undefined) user.username = String(body.username); // 👈 usernameがある場合はこれを追加
     const saved: any = await this.users.save(user as any);
     return saved;
   }

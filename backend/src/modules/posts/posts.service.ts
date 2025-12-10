@@ -1,4 +1,6 @@
-import { Injectable, UnprocessableEntityException, ForbiddenException } from '@nestjs/common';
+// backend/src/modules/posts/posts.service.ts
+
+import { Injectable, UnprocessableEntityException, ForbiddenException, NotFoundException } from '@nestjs/common'; // 👈 NotFoundException をインポート
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual } from 'typeorm';
 import { Post } from './post.entity';
@@ -125,4 +127,30 @@ export class PostsService {
   async getById(id: string) {
     return this.repo.findOne({ where: { id } });
   }
+
+  // 👇 ここから新しいメソッドを追加します 👇
+  /**
+   * 投稿IDから作者IDのみを取得します。コメント通知のために使用されます。
+   */
+  async getAuthorId(id: number | string) {
+    // IDはstringのことが多いですが、念のためnumberも許容
+    const postId = typeof id === 'number' ? id.toString() : id;
+
+    const post = await this.repo.findOne({ 
+      where: { id: postId },
+      select: ['id', 'author'], // IDと作者情報のみを選択
+      relations: ['author'], // 作者エンティティをロード
+    });
+
+    if (!post) throw new NotFoundException('Post not found');
+    
+    // author リレーションがロードされていることを確認
+    if (!post.author || !post.author.id) {
+        throw new UnprocessableEntityException('Post author information missing');
+    }
+
+    // 投稿IDと作者IDを返却
+    return { postId: post.id, authorId: post.author.id };
+  }
+  // 👆 ここまで新しいメソッドを追加します 👆
 }

@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Vote } from './vote.entity';
-import { VotesService } from './votes.service';
+import { Vote } from '../../entities/vote.entity';
 import { VotesController } from './votes.controller';
-import { Post } from '../posts/post.entity';
+import { VotesService } from './votes.service';
+import { PostsModule } from '../posts/posts.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vote, Post])],
-  providers: [VotesService],
+  imports: [
+    TypeOrmModule.forFeature([Vote]),
+    PostsModule,
+  ],
   controllers: [VotesController],
+  providers: [VotesService],
   exports: [VotesService],
 })
 export class VotesModule {}
