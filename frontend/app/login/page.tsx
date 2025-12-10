@@ -1,6 +1,7 @@
 'use client';
+
 import { useState } from 'react';
-import { login, devLoginAdmin, getMe } from '../../lib/api';
+import axios from 'axios';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -9,48 +10,27 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await login(email, password);
-      await getMe();
-      alert('ログイン成功');
+      // 既存の /auth/login が無い場合はスタブを作るか、dev-login を使う
+      const res = await axios.post('/auth/login', { email, password });
+      const token = res.data?.token;
+      if (token) {
+        localStorage.setItem('token', token);
+      }
       location.href = '/';
-    } catch (e: any) {
-      alert(`ログイン失敗: ${e?.response?.data?.message || e.message}`);
+    } catch (err: any) {
+      console.error('[api error]', err.response?.status, err.config?.url, err.response?.data);
+      alert('ログインに失敗しました');
     }
-  }
-
-  async function devLogin() {
-    try {
-      await devLoginAdmin();
-      await getMe();
-      alert('（開発用）管理者としてログインしました');
-      location.href = '/admin/politicians/new';
-    } catch (e: any) {
-      alert(`開発ログイン失敗: ${e?.response?.data?.message || e.message}`);
-    }
-  }
-
-  function clearStorage() {
-    localStorage.clear();
-    alert('ローカルストレージをクリアしました');
   }
 
   return (
-    <div className="max-w-sm mx-auto space-y-4">
-      <h1 className="text-lg font-semibold">ログイン</h1>
-      <form onSubmit={onSubmit} className="space-y-2">
-        <input className="border rounded px-2 py-1 w-full" placeholder="メール" value={email} onChange={e=>setEmail(e.target.value)} />
-        <input className="border rounded px-2 py-1 w-full" placeholder="パスワード" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-        <button className="border rounded px-3 py-2 w-full">ログイン</button>
+    <div className="max-w-md mx-auto p-4">
+      <h1 className="text-lg font-bold mb-4">ログイン</h1>
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        <input type="email" placeholder="メールアドレス" value={email} onChange={(e)=>setEmail(e.target.value)} required />
+        <input type="password" placeholder="パスワード" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+        <button type="submit">ログインする</button>
       </form>
-
-      <div className="space-y-2">
-        <button className="border rounded px-3 py-2 w-full" onClick={clearStorage}>ローカルストレージをクリア</button>
-        {process.env.NODE_ENV !== 'production' && (
-          <button className="border rounded px-3 py-2 w-full bg-gray-100" onClick={devLogin}>
-            （開発用）管理者ワンクリックログイン
-          </button>
-        )}
-      </div>
     </div>
   );
 }
