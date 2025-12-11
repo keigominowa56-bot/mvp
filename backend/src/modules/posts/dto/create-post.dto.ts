@@ -1,26 +1,22 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { PostType } from '../../../enums/post-type.enum';
 
 export class CreatePostDto {
+  @IsEnum(PostType)
+  type: PostType;
+
   @IsString()
-  body: string;
+  @MaxLength(256)
+  title: string;
 
-  @IsOptional()
   @IsString()
-  title?: string;
+  content: string;
 
   @IsOptional()
-  @IsIn(['policy', 'activity'])
-  postCategory?: 'policy' | 'activity';
-
-  @IsOptional()
-  @IsIn(['public', 'hidden'])
-  visibility?: 'public' | 'hidden';
-
-  @IsOptional()
-  @IsString()
-  regionPref?: string;
+  @IsArray()
+  mediaIds?: string[];
 
   @IsOptional()
   @IsString()
-  regionCity?: string;
+  regionId?: string;
 }

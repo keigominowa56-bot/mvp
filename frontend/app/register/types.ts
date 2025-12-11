@@ -1,0 +1,1 @@
+export type AgeGroup = 'teen' | 'twenties' | 'thirties' | 'forties' | 'fifties' | 'sixties_plus';

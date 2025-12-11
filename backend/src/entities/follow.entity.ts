@@ -1,18 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Unique, CreateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('follows')
-@Unique(['follower', 'followee'])
+@Unique('UQ_follow_pair', ['followerUserId', 'targetUserId'])
 export class Follow {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
+  @Column()
+  followerUserId: string;
+
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   follower: User;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  followee: User;
+  @Index()
+  @Column()
+  targetUserId: string;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  target: User;
+
+  @CreateDateColumn()
   createdAt: Date;
 }

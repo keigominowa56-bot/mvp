@@ -1,43 +1,51 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index } from 'typeorm';
-import { Post } from '../posts/post.entity';
-import { UserRole } from '../users/user.entity'; // UserRole enum が別ファイルで定義されている前提
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Region } from './region.entity';
+import { Party } from './party.entity';
+import { UserRole } from '../enums/user-role.enum';
+import { AgeGroup } from '../enums/age-group.enum';
+import { KycStatus } from '../enums/kyc-status.enum';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid') // IDはUUIDと仮定
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // 既存のフィールド (email, passwordHash, displayName など)
+  @Index({ unique: true })
   @Column({ unique: true })
   email: string;
+
+  @Index({ unique: true })
+  @Column({ unique: true })
+  phone: string;
 
   @Column()
   passwordHash: string;
 
   @Column()
-  displayName: string;
+  name: string;
 
-  // 権限制限機能で追加されたRoleフィールド
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.CITIZEN,
-  })
+  @Index({ unique: true })
+  @Column({ unique: true })
+  nickname: string;
+
+  @Column({ type: 'enum', enum: AgeGroup })
+  ageGroup: AgeGroup;
+
+  @ManyToOne(() => Region, { nullable: true })
+  region?: Region | null;
+
+  @ManyToOne(() => Party, { nullable: true })
+  supportedParty?: Party | null;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.CITIZEN })
   role: UserRole;
 
-  // ⬇️ usernameフィールド（メンション用ハンドル）。全ユーザーで一意、検索用にIndexも付与
-  @Index({ unique: true })
-  @Column({ unique: true, length: 32 })
-  username: string;
-  // ⬆️ usernameフィールドを追加
+  @Column({ type: 'enum', enum: KycStatus, default: KycStatus.NONE })
+  kycStatus: KycStatus;
 
-  @Column({ nullable: true })
-  addressPrefecture: string;
+  @CreateDateColumn()
+  createdAt: Date;
 
-  @Column({ nullable: true })
-  addressCity: string;
-
-  // ... 他のリレーション (postsなど) ...
-  @OneToMany(() => Post, (post) => post.author)
-  posts: Post[];
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

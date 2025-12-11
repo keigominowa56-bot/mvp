@@ -1,10 +1,7 @@
-import { IsString, IsIn } from 'class-validator';
+import { IsEnum } from 'class-validator';
+import { VoteChoice } from '../../../enums/vote-choice.enum';
 
 export class CreateVoteDto {
-  @IsString()
-  postId: string;
-
-  @IsString()
-  @IsIn(['support', 'oppose'])
-  type: 'support' | 'oppose';
+  @IsEnum(VoteChoice)
+  choice: VoteChoice;
 }

@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PoliticianProfileController } from './politician-profile.controller';
+import { PoliticiansService } from './politicians.service';
+import { PoliticiansController } from './politicians.controller';
+import { PoliticianProfile, FundingSpendingItem } from '../../entities/politician-profile.entity';
 import { User } from '../../entities/user.entity';
-import { Follow } from '../follows/follow.entity';
-import { Post } from '../posts/post.entity';
-import { Policy } from '../../entities/policy.entity';
-import { FundingRecord } from '../../entities/funding-record.entity';
+import { Party } from '../../entities/party.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Follow, Post, Policy, FundingRecord])],
-  controllers: [PoliticianProfileController],
+  imports: [TypeOrmModule.forFeature([PoliticianProfile, FundingSpendingItem, User, Party])],
+  controllers: [PoliticiansController],
+  providers: [PoliticiansService],
+  exports: [PoliticiansService],
 })
 export class PoliticiansModule {}

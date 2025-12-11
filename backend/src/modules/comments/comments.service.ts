@@ -1,109 +1,54 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Comment } from '../../entities/comment.entity';
-import { CommentMention } from '../../entities/comment-mention.entity';
-import { CommentReaction } from '../../entities/comment-reaction.entity';
+import { Post } from '../../entities/post.entity';
+import { User } from '../../entities/user.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
-// CreateReplyDto は mediaId を持つように拡張済みである前提
-import { CreateReplyDto } from './dto/create-reply.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class CommentsService {
   constructor(
-    @InjectRepository(Comment) private readonly commentsRepo: Repository<Comment>,
-    @InjectRepository(CommentMention) private readonly mentionsRepo: Repository<CommentMention>,
-    @InjectRepository(CommentReaction) private readonly reactionsRepo: Repository<CommentReaction>,
+    @InjectRepository(Comment) private readonly comments: Repository<Comment>,
+    @InjectRepository(Post) private readonly posts: Repository<Post>,
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
+    private readonly users: UsersService,
   ) {}
 
-  async listByPost(postId: string) {
-    return this.commentsRepo.find({
-      where: { postId },
-      order: { createdAt: 'ASC' },
-      relations: ['reactions', 'mentions', 'parent', 'children'],
-    });
+  async list(postId: string, cursor?: string, limit = 20) {
+    const qb = this.comments.createQueryBuilder('c')
+      .where('c.postId = :postId', { postId })
+      .leftJoinAndSelect('c.author', 'author')
+      .orderBy('c.createdAt', 'ASC');
+
+    qb.take(Math.min(limit, 100));
+    return qb.getMany();
   }
 
-  async get(commentId: string) {
-    const comment = await this.commentsRepo.findOne({
-      where: { id: commentId },
-      relations: ['reactions', 'mentions', 'parent', 'children'],
-    });
-    if (!comment) throw new NotFoundException('Comment not found');
-    return comment;
-  }
+  async create(postId: string, authorUserId: string, dto: CreateCommentDto) {
+    const post = await this.posts.findOne({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
 
-  async createComment(postId: string, authorId: string, dto: CreateCommentDto) {
-    if (!postId) throw new BadRequestException('postId is required');
-
-    const comment = await this.commentsRepo.save(
-      this.commentsRepo.create({
-        postId,
-        authorId,
-        body: dto.body,
-        parentId: null,
-        // メディアIDを保存（任意）
-        mediaId: dto.mediaId ?? null,
-      }),
-    );
-
-    // 既存のメンション処理／通知処理がある場合はここで呼び出し
-    // await this.handleMentions(comment, authorId, dto.mentions);
-
-    return this.get(comment.id);
-  }
-
-  async reply(commentId: string, authorId: string, dto: CreateReplyDto) {
-    const parent = await this.commentsRepo.findOne({ where: { id: commentId } });
-    if (!parent) throw new NotFoundException('Parent comment not found');
-
-    const comment = await this.commentsRepo.save(
-      this.commentsRepo.create({
-        postId: parent.postId,
-        parentId: parent.id,
-        authorId,
-        body: dto.body,
-        // 返信側でもメディアIDを保存（任意）
-        // CreateReplyDto に mediaId?: string が含まれている前提
-        mediaId: (dto as any).mediaId ?? null,
-      }),
-    );
-
-    // 親コメント作者への通知／メンション処理があれば既存ロジックを呼び出し
-    // if (parent.authorId !== authorId) { ... }
-    // await this.handleMentions(comment, authorId, dto.mentions);
-
-    return this.get(comment.id);
-  }
-
-  async react(commentId: string, userId: string, dto: { type: 'agree' }) {
-    const comment = await this.commentsRepo.findOne({ where: { id: commentId } });
-    if (!comment) throw new NotFoundException('Comment not found');
-
-    if (dto.type !== 'agree') {
-      throw new BadRequestException('Unsupported reaction type');
+    // mentions: nickname 配列 → ユーザーID配列へ解決（UsersService 側に finder を用意している前提）
+    let mentionIds: string[] | null = null;
+    if (dto.mentions?.length) {
+      const found = await Promise.all(dto.mentions.map((nick) => this.usersRepo.findOne({ where: { nickname: nick } })));
+      mentionIds = found.filter(Boolean).map((u) => (u as User).id);
     }
 
-    try {
-      await this.reactionsRepo.save(
-        this.reactionsRepo.create({
-          commentId,
-          userId,
-          type: dto.type,
-        }),
-      );
-    } catch (e) {
-      // UNIQUE違反時は無視
-    }
+    const comment = this.comments.create({
+      postId,
+      authorUserId,
+      content: dto.content,
+      mediaIds: dto.mediaIds ?? null,
+      mentions: mentionIds,
+    });
+    const saved = await this.comments.save(comment);
 
-    return this.get(commentId);
+    // ここで通知モジュールへイベント発火（メンション通知・返信通知など）は拡張ポイント
+    // await this.notifications.emitMention(mentionIds, saved);
+
+    return saved;
   }
-
-  async unreact(commentId: string, userId: string, dto: { type: 'agree' }) {
-    await this.reactionsRepo.delete({ commentId, userId, type: dto.type });
-    return this.get(commentId);
-  }
-
-  // 既存のメンション処理がある場合はここに実装
-  // private async handleMentions(comment: Comment, authorId: string, mentions?: string[]) { ... }
 }

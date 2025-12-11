@@ -1,60 +1,33 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Notification } from '../../entities/notification.entity';
 import { Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { ActivityLogService } from '../activity-logs/activity-log.service';
+import { Notification } from '../../entities/notification.entity';
+import { NotificationType } from '../../enums/notification-type.enum';
 
 @Injectable()
 export class NotificationsService {
-  constructor(
-    @InjectRepository(Notification) private readonly repo: Repository<Notification>,
-    @InjectRepository(User) private readonly users: Repository<User>,
-    private readonly logs: ActivityLogService,
-  ) {}
+  constructor(@InjectRepository(Notification) private readonly notifications: Repository<Notification>) {}
 
-  async sendToUser(
-    userId: string,
-    data: { type: string; title: string; body?: string; linkUrl?: string },
-  ) {
-    const user = await this.users.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-
-    const n = this.repo.create({ user, ...data });
-    const saved = await this.repo.save(n);
-
-    await this.logs.log(null, 'notification_sent', {
-      notificationId: saved.id,
+  async notify(userId: string, input: { type: NotificationType; title: string; body: string }) {
+    const n = this.notifications.create({
       userId,
-      type: data.type,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      readAt: null,
     });
-
-    return saved;
+    return this.notifications.save(n);
   }
 
-  async bulkSend(
-    userIds: string[],
-    data: { type: string; title: string; body?: string; linkUrl?: string },
-  ) {
-    const results = [];
-    for (const uid of userIds) {
-      results.push(await this.sendToUser(uid, data));
-    }
-    return results;
-  }
-
-  async listForUser(userId: string) {
-    return this.repo.find({
-      where: { user: { id: userId } },
-      order: { createdAt: 'DESC' },
-      select: ['id', 'type', 'title', 'body', 'linkUrl', 'readAt', 'createdAt'],
-    });
+  async listUnread(userId: string) {
+    return this.notifications.find({ where: { userId, readAt: null }, order: { createdAt: 'DESC' } });
   }
 
   async markRead(id: string, userId: string) {
-    const n = await this.repo.findOne({ where: { id }, relations: ['user'] });
-    if (!n || n.user.id !== userId) throw new NotFoundException('Notification not found');
+    const n = await this.notifications.findOne({ where: { id, userId } });
+    if (!n) return { ok: true };
     n.readAt = new Date();
-    return this.repo.save(n);
+    await this.notifications.save(n);
+    return { ok: true };
   }
 }

@@ -7,8 +7,8 @@ import { FollowsController } from './follows.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Follow, User])],
-  providers: [FollowsService],
   controllers: [FollowsController],
+  providers: [FollowsService],
   exports: [FollowsService],
 })
 export class FollowsModule {}

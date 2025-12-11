@@ -1,41 +1,23 @@
-import { Controller, Post, Get, Param, Body, UseGuards, Request, Patch, ForbiddenException } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { VotesService } from './votes.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateVoteDto } from './dto/create-vote.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 
-@Controller('votes')
-@UseGuards(JwtAuthGuard)
+@Controller('posts/:postId/votes')
 export class VotesController {
   constructor(private readonly votes: VotesService) {}
 
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle(5, 60) // 1分に5回まで
   @Post()
-  async create(@Body() dto: CreateVoteDto, @Request() req) {
-    if (req.user?.role !== 'user') throw new ForbiddenException('Only users can vote');
-    const vote = await this.votes.create(req.user.sub, dto);
-    const stats = await this.votes.getVoteStats(dto.postId);
-    return { vote, stats };
+  async cast(@Param('postId') postId: string, @Body() dto: CreateVoteDto, @Req() req: any) {
+    const userId = req.user?.sub ?? req.user?.id;
+    return this.votes.cast(postId, userId, dto);
   }
 
-  @Patch(':postId')
-  async update(@Param('postId') postId: string, @Body('type') type: 'support' | 'oppose', @Request() req) {
-    if (req.user?.role !== 'user') throw new ForbiddenException('Only users can vote');
-    const vote = await this.votes.update(req.user.sub, postId, type);
-    const stats = await this.votes.getVoteStats(postId);
-    return { vote, stats };
-  }
-
-  @Get('stats/:postId')
-  getStats(@Param('postId') postId: string) {
-    return this.votes.getVoteStats(postId);
-  }
-
-  @Get('post/:postId')
-  findByPost(@Param('postId') postId: string) {
-    return this.votes.findByPost(postId);
-  }
-
-  @Get('user/:postId')
-  getUserVote(@Param('postId') postId: string, @Request() req) {
-    return this.votes.getUserVote(req.user.sub, postId);
+  @Get('summary')
+  async summary(@Param('postId') postId: string) {
+    return this.votes.summary(postId);
   }
 }

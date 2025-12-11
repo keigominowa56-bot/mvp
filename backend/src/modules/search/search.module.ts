@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SearchController } from './search.controller';
-import { Post } from '../posts/post.entity';
+import { SearchService } from './search.service';
+import { PoliticianProfile } from '../../entities/politician-profile.entity';
+import { Post } from '../../entities/post.entity';
 import { User } from '../../entities/user.entity';
+import { Party } from '../../entities/party.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, User])],
+  imports: [TypeOrmModule.forFeature([PoliticianProfile, Post, User, Party])],
   controllers: [SearchController],
+  providers: [SearchService],
+  exports: [SearchService],
 })
 export class SearchModule {}

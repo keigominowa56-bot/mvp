@@ -1,60 +1,37 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { User } from './user.entity'; // ユーザーエンティティ
-import { Post } from '../modules/posts/post.entity'; // 投稿エンティティ
-import { CommentMention } from './comment-mention.entity';
-import { CommentReaction } from './comment-reaction.entity';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Post } from './post.entity';
+import { User } from './user.entity';
 
 @Entity('comments')
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
-  postId: string; // 親投稿ID
+  postId: string;
 
+  @ManyToOne(() => Post, { onDelete: 'CASCADE' })
+  post: Post;
+
+  @Index()
   @Column()
-  authorId: string; // コメント作成者ID
+  authorUserId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  author: User;
 
   @Column({ type: 'text' })
-  body: string; // コメント本文
+  content: string;
 
-  @Column({ nullable: true })
-  parentId: string | null; // 返信の場合の親コメントID
+  // コメントのメディア（画像/動画）ID（UUID）の配列
+  @Column({ type: 'json', nullable: true })
+  mediaIds: string[] | null;
 
-  // コメントに紐づく単一のメディア（画像または動画）のID（media モジュールで発行される UUID）を保存
-  @Column({ type: 'uuid', nullable: true })
-  mediaId: string | null;
+  // @nickname を解析してユーザーID配列に解決した結果を保持（通知連動）
+  @Column({ type: 'json', nullable: true })
+  mentions: string[] | null;
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  // リレーションは既存を維持
-  @ManyToOne(() => User, (user) => user.comments)
-  author: User;
-
-  @ManyToOne(() => Post, (post) => post.comments)
-  post: Post;
-
-  @ManyToOne(() => Comment, (comment) => comment.children)
-  parent: Comment;
-
-  @OneToMany(() => Comment, (comment) => comment.parent)
-  children: Comment[];
-
-  @OneToMany(() => CommentReaction, (reaction) => reaction.comment)
-  reactions: CommentReaction[];
-
-  @OneToMany(() => CommentMention, (mention) => mention.comment)
-  mentions: CommentMention[];
 }

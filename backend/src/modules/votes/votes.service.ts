@@ -1,54 +1,38 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Vote } from './vote.entity';
-import { Post } from '../posts/post.entity';
+import { Vote } from '../../entities/vote.entity';
+import { Post } from '../../entities/post.entity';
 import { CreateVoteDto } from './dto/create-vote.dto';
 
 @Injectable()
 export class VotesService {
   constructor(
-    @InjectRepository(Vote)
-    private readonly voteRepo: Repository<Vote>,
-    @InjectRepository(Post)
-    private readonly postRepo: Repository<Post>,
+    @InjectRepository(Vote) private readonly votes: Repository<Vote>,
+    @InjectRepository(Post) private readonly posts: Repository<Post>,
   ) {}
 
-  async create(userId: string, dto: CreateVoteDto) {
-    const post = await this.postRepo.findOne({ where: { id: dto.postId } });
+  async cast(postId: string, voterUserId: string, dto: CreateVoteDto) {
+    const post = await this.posts.findOne({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
 
-    const existing = await this.voteRepo.findOne({ where: { postId: dto.postId, userId } });
-    if (existing) throw new BadRequestException('Already voted');
+    // 1ユーザー1回（Unique制約で担保し、サービス層で409返す）
+    const existing = await this.votes.findOne({ where: { postId, voterUserId } });
+    if (existing) throw new ConflictException('Already voted');
 
-    const vote = this.voteRepo.create({
-      postId: dto.postId,
-      type: dto.type,
-      userId,
-    });
-    await this.voteRepo.save(vote);
-    return vote;
+    const vote = this.votes.create({ postId, voterUserId, choice: dto.choice });
+    return this.votes.save(vote);
   }
 
-  async update(userId: string, postId: string, type: 'support' | 'oppose') {
-    const vote = await this.voteRepo.findOne({ where: { postId, userId } });
-    if (!vote) throw new NotFoundException('Vote not found');
-    vote.type = type;
-    await this.voteRepo.save(vote);
-    return vote;
-  }
-
-  async getVoteStats(postId: string) {
-    const support = await this.voteRepo.count({ where: { postId, type: 'support' } });
-    const oppose = await this.voteRepo.count({ where: { postId, type: 'oppose' } });
-    return { support, oppose, total: support + oppose };
-  }
-
-  async findByPost(postId: string) {
-    return this.voteRepo.find({ where: { postId }, order: { createdAt: 'DESC' } });
-  }
-
-  async getUserVote(userId: string, postId: string) {
-    return this.voteRepo.findOne({ where: { userId, postId } });
+  async summary(postId: string) {
+    const rows = await this.votes.find({ where: { postId } });
+    const summary = rows.reduce(
+      (acc, v) => {
+        acc[v.choice] = (acc[v.choice] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    return { postId, summary, total: rows.length };
   }
 }
