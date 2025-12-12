@@ -1,29 +1,25 @@
-'use client';
 import useSWR from 'swr';
-import { fetchComments, createComment, Comment } from '../api';
+import { fetchComments, createComment } from '../api';
 
-type Options = {
-  targetId: string; // postId を渡してください
+export type Comment = {
+  id: string;
+  authorUserId: string;
+  content: string;
+  createdAt: string;
+  mediaIds?: string[];
+  mentions?: string[];
 };
 
-export function useComments({ targetId }: Options) {
-  const { data, error, isLoading, mutate } = useSWR<Comment[]>(
-    targetId ? ['/comments', targetId] : null,
-    () => fetchComments(targetId),
-    { revalidateOnFocus: false },
-  );
-
-  async function add(content: string) {
-    if (!targetId || !content.trim()) return;
-    await createComment({ postId: targetId, content: content.trim() });
-    await mutate(); // 再取得
-  }
-
+export function useComments(postId: string) {
+  const { data, error, mutate } = useSWR<Comment[]>(`/posts/${postId}/comments`, () => fetchComments(postId));
   return {
     comments: data || [],
-    isLoading,
-    isError: !!error,
-    add,
-    reload: () => mutate(),
+    isLoading: !data && !error,
+    error,
+    mutate,
+    create: async (payload: { text: string; mediaIds?: string[]; mentions?: string[] }) => {
+      await createComment(postId, payload);
+      await mutate();
+    },
   };
 }

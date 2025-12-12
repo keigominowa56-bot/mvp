@@ -16,7 +16,7 @@ import { JwtStrategy } from './jwt.strategy';
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         secret: cfg.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: cfg.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m' },
+        signOptions: { expiresIn: 900 }, // 15分（number）
       }),
     }),
   ],

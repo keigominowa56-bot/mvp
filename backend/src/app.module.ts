@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
+// Entities
 import { User } from './entities/user.entity';
 import { Region } from './entities/region.entity';
 import { Party } from './entities/party.entity';
@@ -22,6 +23,7 @@ import { SurveyResponse } from './entities/survey-response.entity';
 import { WalletTransaction } from './entities/wallet-transaction.entity';
 import { Notification } from './entities/notification.entity';
 
+// Modules
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PoliticiansModule } from './modules/politicians/politicians.module';
@@ -41,16 +43,10 @@ import { MediaModule } from './modules/media/media.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-
-    // Throttler: グローバルの基本値（.env で上書き可能）
-    ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({
-        ttl: parseInt(cfg.get('THROTTLE_TTL') || '60', 10),   // 秒
-        limit: parseInt(cfg.get('THROTTLE_LIMIT') || '60', 10), // 回/ttl
-      }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 30,
     }),
-
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
@@ -68,11 +64,10 @@ import { MediaModule } from './modules/media/media.module';
           WalletTransaction,
           Notification,
         ],
-        synchronize: true, // 本番ではマイグレーションに移行
+        synchronize: true,
         logging: false,
       }),
     }),
-
     AuthModule,
     UsersModule,
     PoliticiansModule,
@@ -91,7 +86,6 @@ import { MediaModule } from './modules/media/media.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // 全体に ThrottlerGuard を適用（細かい制御は @Throttle で上書き）
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

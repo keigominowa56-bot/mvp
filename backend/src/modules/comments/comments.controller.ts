@@ -14,7 +14,7 @@ export class CommentsController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Throttle(10, 60) // 1分に10回まで
+  @Throttle(10, 60)
   @Post()
   async create(@Param('postId') postId: string, @Body() dto: CreateCommentDto, @Req() req: any) {
     const userId = req.user?.sub ?? req.user?.id;

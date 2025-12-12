@@ -1,37 +1,26 @@
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
 import { Post } from './post.entity';
 import { User } from './user.entity';
+import { CommentReaction } from './comment-reaction.entity';
 
 @Entity('comments')
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
-  @Column()
-  postId: string;
+  @Column() postId: string;
+  @ManyToOne(() => Post, { onDelete: 'CASCADE' }) post: Post;
 
-  @ManyToOne(() => Post, { onDelete: 'CASCADE' })
-  post: Post;
+  @Column() authorUserId: string;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' }) author: User;
 
-  @Index()
-  @Column()
-  authorUserId: string;
+  @Column({ type: 'text' }) content: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  author: User;
+  @Column({ type: 'json', nullable: true }) mediaIds: string[] | null;
+  @Column({ type: 'json', nullable: true }) mentions: string[] | null;
 
-  @Column({ type: 'text' })
-  content: string;
+  @CreateDateColumn() createdAt: Date;
 
-  // コメントのメディア（画像/動画）ID（UUID）の配列
-  @Column({ type: 'json', nullable: true })
-  mediaIds: string[] | null;
-
-  // @nickname を解析してユーザーID配列に解決した結果を保持（通知連動）
-  @Column({ type: 'json', nullable: true })
-  mentions: string[] | null;
-
-  @CreateDateColumn()
-  createdAt: Date;
+  @OneToMany(() => CommentReaction, (r) => r.comment)
+  reactions: CommentReaction[];
 }
