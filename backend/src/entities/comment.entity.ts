@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Post } from './post.entity';
 import { User } from './user.entity';
 import { CommentReaction } from './comment-reaction.entity';
@@ -8,18 +8,31 @@ export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column() postId: string;
-  @ManyToOne(() => Post, { onDelete: 'CASCADE' }) post: Post;
+  @Index()
+  @Column()
+  postId: string;
 
-  @Column() authorUserId: string;
-  @ManyToOne(() => User, { onDelete: 'CASCADE' }) author: User;
+  @ManyToOne(() => Post, { onDelete: 'CASCADE' })
+  post: Post;
 
-  @Column({ type: 'text' }) content: string;
+  @Index()
+  @Column()
+  authorUserId: string;
 
-  @Column({ type: 'json', nullable: true }) mediaIds: string[] | null;
-  @Column({ type: 'json', nullable: true }) mentions: string[] | null;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  author: User;
 
-  @CreateDateColumn() createdAt: Date;
+  @Column({ type: 'text' })
+  content: string;
+
+  @Column({ type: 'json', nullable: true })
+  mediaIds: string[] | null;
+
+  @Column({ type: 'json', nullable: true })
+  mentions: string[] | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @OneToMany(() => CommentReaction, (r) => r.comment)
   reactions: CommentReaction[];

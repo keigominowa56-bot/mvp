@@ -1,49 +1,65 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
-import { Region } from '../../entities/region.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { RegisterUserDto } from '../../auth/dto/register-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User) private readonly users: Repository<User>,
-    @InjectRepository(Region) private readonly regions: Repository<Region>,
-  ) {}
+  constructor(@InjectRepository(User) private readonly repo: Repository<User>) {}
 
   async findAll(): Promise<User[]> {
-    return this.users.find({ relations: ['region', 'supportedParty'] });
+    return this.repo.find();
   }
 
   async findOne(id: string): Promise<User> {
-    const u = await this.users.findOne({ where: { id }, relations: ['region', 'supportedParty'] });
+    const u = await this.repo.findOne({ where: { id } });
     if (!u) throw new NotFoundException('User not found');
     return u;
   }
 
-  async findByEmailOrPhone(id: string) {
-    return this.users.findOne({ where: [{ email: id }, { phone: id }], relations: ['region', 'supportedParty'] });
+  async findById(id: string): Promise<User | null> {
+    return this.repo.findOne({ where: { id } });
   }
 
-  async create(dto: CreateUserDto): Promise<User> {
-    const exists = await this.users.findOne({ where: [{ email: dto.email }, { phone: dto.phone }, { nickname: dto.nickname }] });
-    if (exists) throw new Error('User already exists');
-    const region = dto.regionId ? await this.regions.findOne({ where: { id: dto.regionId } }) : null;
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-    const u = this.users.create({ ...dto, passwordHash, region });
-    return this.users.save(u);
+  async findByEmailOrPhone(id: string): Promise<User | null> {
+    return this.repo.findOne({ where: [{ email: id }, { phone: id }] });
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<User> {
+  async create(dto: Partial<User>): Promise<User> {
+    const u = this.repo.create(dto);
+    return this.repo.save(u);
+  }
+
+  async update(id: string, partial: Partial<User>): Promise<User> {
     const u = await this.findOne(id);
-    Object.assign(u, dto);
-    return this.users.save(u);
+    Object.assign(u, partial);
+    return this.repo.save(u);
   }
 
   async remove(id: string): Promise<void> {
-    await this.users.delete({ id });
+    await this.repo.delete({ id });
+  }
+
+  async createUser(dto: RegisterUserDto): Promise<User> {
+    const dup = await this.repo.findOne({
+      where: [{ email: dto.email }, { phone: dto.phone }, { nickname: dto.nickname }],
+    });
+    if (dup) throw new Error('User already exists');
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = this.repo.create({
+      name: dto.name,
+      nickname: dto.nickname,
+      ageGroup: String(dto.ageGroup),
+      email: dto.email,
+      phone: dto.phone,
+      passwordHash,
+      role: 'user',
+      kycStatus: 'pending',
+      regionId: dto.regionId || null,
+    });
+    return this.repo.save(user);
   }
 }

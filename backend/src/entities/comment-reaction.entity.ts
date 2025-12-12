@@ -1,32 +1,25 @@
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { Comment } from './comment.entity';
 
-export type CommentReactionType = 'agree';
-
 @Entity('comment_reactions')
-@Index(['commentId', 'userId', 'type'], { unique: true })
+@Unique('UQ_comment_user_type', ['commentId', 'userId', 'type'])
 export class CommentReaction {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Index()
   @Column()
-  commentId: number;
+  commentId: string;
 
   @ManyToOne(() => Comment, (c) => c.reactions, { onDelete: 'CASCADE' })
   comment: Comment;
 
   @Index()
   @Column()
-  userId: number;
+  userId: string;
 
-  // User 参照は暫定的に外します
-  // @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  // user: User;
-
-  @Index()
-  @Column({ type: 'varchar', length: 16 })
-  type: CommentReactionType;
+  @Column({ length: 32 })
+  type: string;
 
   @CreateDateColumn()
   createdAt: Date;

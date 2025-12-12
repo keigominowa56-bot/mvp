@@ -2,9 +2,10 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nest
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('posts/:postId/comments')
+@UseGuards(ThrottlerGuard)
 export class CommentsController {
   constructor(private readonly comments: CommentsService) {}
 

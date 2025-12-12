@@ -1,32 +1,23 @@
-import { Controller, Get, Param, Post, Patch, Delete, Body } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { RegisterUserDto } from 'src/auth/dto/register-user.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
-  findAll() {
+  async list() {
     return this.users.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.users.findOne(id);
+  async findById(@Param('id') id: string) {
+    return this.users.findById(id);
   }
 
   @Post()
-  create(@Body() body: any) {
-    return this.users.create(body);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.users.update(id, body);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.users.remove(id);
+  async createUser(@Body() dto: RegisterUserDto) {
+    return this.users.createUser(dto);
   }
 }

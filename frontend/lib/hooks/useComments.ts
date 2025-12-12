@@ -1,25 +1,24 @@
-import useSWR from 'swr';
-import { fetchComments, createComment } from '../api';
+'use client';
 
-export type Comment = {
-  id: string;
-  authorUserId: string;
-  content: string;
-  createdAt: string;
-  mediaIds?: string[];
-  mentions?: string[];
-};
+import useSWR from 'swr';
+import { fetchComments, createComment, Comment } from '../api';
 
 export function useComments(postId: string) {
-  const { data, error, mutate } = useSWR<Comment[]>(`/posts/${postId}/comments`, () => fetchComments(postId));
+  const key = `/posts/${postId}/comments`;
+  const { data, error, isLoading, mutate } = useSWR<Comment[]>(key, () => fetchComments(postId));
+
+  async function addComment(payload: { text: string; mediaIds?: string[]; mentions?: string[] }) {
+    await createComment(postId, payload);
+    await mutate();
+  }
+
   return {
     comments: data || [],
-    isLoading: !data && !error,
     error,
+    isLoading,
+    addComment,
     mutate,
-    create: async (payload: { text: string; mediaIds?: string[]; mentions?: string[] }) => {
-      await createComment(postId, payload);
-      await mutate();
-    },
   };
 }
+
+export { useComments }

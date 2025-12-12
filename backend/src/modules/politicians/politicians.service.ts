@@ -1,12 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
-import { PoliticianProfile, FundingSpendingItem } from '../../entities/politician-profile.entity';
-import { User } from '../../entities/user.entity';
-import { Party } from '../../entities/party.entity';
-import { UpdatePoliticianDto } from './dto/update-politician.dto';
-import { SearchPoliticiansDto } from './dto/search-politicians.dto';
-import { UserRole } from '../../enums/user-role.enum';
+import { PoliticianProfile, FundingSpendingItem } from 'src/entities/politician-profile.entity';
+import { User } from 'src/entities/user.entity';
+import { Party } from 'src/entities/party.entity';
+import { UserRoleEnum } from 'src/enums/user-role.enum';
 
 @Injectable()
 export class PoliticiansService {
@@ -26,18 +24,15 @@ export class PoliticiansService {
     return profile;
   }
 
-  async updateProfile(id: string, editorUserId: string, dto: UpdatePoliticianDto) {
+  async updateProfile(id: string, editorUserId: string, dto: any) {
     const profile = await this.getProfile(id);
-    // 本人のみ更新可
     if (profile.userId !== editorUserId) {
-      // 追加ルール: 管理者は許可
       const editor = await this.users.findOne({ where: { id: editorUserId } });
-      if (!editor || (editor.role !== UserRole.ADMIN && editor.id !== profile.userId)) {
+      if (!editor || (editor.role !== UserRoleEnum.ADMIN && editor.id !== profile.userId)) {
         throw new ForbiddenException('Only the owner or admin can update profile');
       }
     }
 
-    // partyId の解決（存在チェック）
     if (dto.partyId) {
       const party = await this.parties.findOne({ where: { id: dto.partyId } });
       if (!party) throw new NotFoundException('Party not found');
@@ -53,54 +48,28 @@ export class PoliticiansService {
     return this.getProfile(id);
   }
 
-  async search(input: SearchPoliticiansDto) {
-    // 簡易検索: ユーザー名/プロフィールbioに対して ILike、party/region はID指定を想定
+  async search(query: { region?: string; party?: string; q?: string }) {
     const qb = this.profiles.createQueryBuilder('p')
       .leftJoinAndSelect('p.user', 'user')
       .leftJoinAndSelect('p.party', 'party');
 
-    if (input.q) {
-      qb.andWhere('(user.name ILIKE :q OR p.bio ILIKE :q)', { q: `%${input.q}%` });
-    }
-
-    if (input.party) {
-      qb.andWhere('party.id = :partyId OR party.name ILIKE :partyName', { partyId: input.party, partyName: `%${input.party}%` });
-    }
-
-    // region: ユーザーに region がある前提なら join してフィルタ（簡易実装）
-    if (input.region) {
+    if (query.q) qb.andWhere('(user.name ILIKE :q OR p.bio ILIKE :q)', { q: `%${query.q}%` });
+    if (query.party) qb.andWhere('party.id = :pid OR party.name ILIKE :pname', { pid: query.party, pname: `%${query.party}%` });
+    if (query.region) {
       qb.leftJoin('user.region', 'region')
-        .andWhere('region.id = :regionId OR region.name ILIKE :regionName', {
-          regionId: input.region,
-          regionName: `%${input.region}%`,
-        });
+        .andWhere('region.id = :rid OR region.name ILIKE :rname', { rid: query.region, rname: `%${query.region}%` });
     }
 
     qb.orderBy('p.updatedAt', 'DESC');
     return qb.getMany();
   }
 
-  async fundingSummary(profileId: string) {
-    // カテゴリ別集計
-    const rows = await this.spending.find({ where: { politicianProfileId: profileId } });
-    const summary: Record<string, number> = {};
-    for (const r of rows) {
-      summary[r.category] = (summary[r.category] || 0) + r.amount;
+  async fundingSummary(id: string): Promise<{ category: string; amount: number }[]> {
+    const items = await this.spending.find({ where: { politicianProfileId: id } });
+    const sum: Record<string, number> = {};
+    for (const it of items) {
+      sum[it.category] = (sum[it.category] || 0) + it.amount;
     }
-    // グラフライブラリ用の形式に変換
-    const series = Object.entries(summary).map(([category, amount]) => ({ category, amount }));
-    return { profileId, series, total: series.reduce((a, b) => a + b.amount, 0) };
-  }
-
-  async ensureProfileForUser(userId: string) {
-    // ユーザーが POLITICIAN の場合は初期プロフィールを自動作成
-    let profile = await this.profiles.findOne({ where: { userId } });
-    if (!profile) {
-      const user = await this.users.findOne({ where: { id: userId } });
-      if (!user) throw new NotFoundException('User not found');
-      profile = this.profiles.create({ userId, bio: null, age: null, partyId: null, pledges: [], fundingReportUrl: null });
-      await this.profiles.save(profile);
-    }
-    return profile;
+    return Object.entries(sum).map(([category, amount]) => ({ category, amount }));
   }
 }

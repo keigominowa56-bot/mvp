@@ -1,107 +1,97 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { fetchFeed, Post } from '../../lib/api';
-import { useAuth } from '../../contexts/AuthContext';
+import {
+  fetchFeed,
+  votePost,
+  Post,
+} from '../../lib/api';
 import CommentsSection from '../../components/CommentsSection';
 import ReportButton from '../../components/ReportButton';
-import PostCategoryBadge from '../../components/PostCategoryBadge';
+import { useSearchParams } from 'next/navigation';
 
-type CategoryFilter = 'all' | 'policy' | 'activity';
+type FeedFilters = {
+  type?: 'activity' | 'pledge' | 'question' | 'news';
+  region?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+};
 
 export default function FeedPage() {
-  const { isLoggedIn, ready } = useAuth();
-  const [items, setItems] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [category, setCategory] = useState<CategoryFilter>('all');
+  const params = useSearchParams();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const headerTitle = useMemo(() => {
-    if (category === 'policy') return 'フィード（政策のみ）';
-    if (category === 'activity') return 'フィード（活動報告のみ）';
-    return 'フィード';
-  }, [category]);
+  const filters: FeedFilters = useMemo(() => ({
+    type: (params.get('type') || undefined) as FeedFilters['type'],
+    region: params.get('region') || undefined,
+    q: params.get('q') || undefined,
+    limit: 20,
+  }), [params]);
 
-  async function load() {
+  async function loadFeed(filters: FeedFilters) {
     setLoading(true);
-    setErr(null);
+    setError(null);
     try {
-      const params: any = { mode: 'followed_first', limit: 50 };
-      if (category !== 'all') {
-        params.category = category;
-      }
-      const data = await fetchFeed(params);
-      setItems(data);
+      const data = await fetchFeed(filters);
+      setPosts(data);
     } catch (e: any) {
-      setErr(e?.response?.data?.message || e?.message || '取得に失敗しました');
+      setError(e?.message || 'Failed to load feed');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (ready && isLoggedIn) {
-      load();
-    }
+    loadFeed(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, isLoggedIn, category]);
+  }, [filters.type, filters.region, filters.q, filters.page, filters.limit]);
 
-  if (!ready) return <div className="text-sm text-slate-500">読み込み中...</div>;
-  if (!isLoggedIn) return <div className="text-sm text-slate-500">ログインするとフィードが表示されます。</div>;
+  async function onVote(postId: string, choice: 'agree' | 'disagree') {
+    try {
+      await votePost(postId, choice);
+      loadFeed(filters);
+      alert('投票しました');
+    } catch (e: any) {
+      alert(e?.message || '投票に失敗しました');
+    }
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{headerTitle}</h1>
-        <div className="flex items-center gap-2">
-          <button
-            className={`px-3 py-1 rounded border text-sm ${category === 'all' ? 'bg-slate-800 text-white' : ''}`}
-            onClick={() => setCategory('all')}
-          >
-            すべて
-          </button>
-          <button
-            className={`px-3 py-1 rounded border text-sm ${category === 'policy' ? 'bg-blue-600 text-white border-blue-600' : ''}`}
-            onClick={() => setCategory('policy')}
-          >
-            政策
-          </button>
-          <button
-            className={`px-3 py-1 rounded border text-sm ${category === 'activity' ? 'bg-green-600 text-white border-green-600' : ''}`}
-            onClick={() => setCategory('activity')}
-          >
-            活動報告
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-3">
+      {loading && <div className="bg-white border rounded p-4">読み込み中…</div>}
+      {error && <div className="bg-red-50 border border-red-300 text-red-700 rounded p-4">{error}</div>}
 
-      {loading && <div className="text-sm text-slate-500">読み込み中...</div>}
-      {err && <div className="text-sm text-red-600">{err}</div>}
-
-      <ul className="space-y-3">
-        {items.map((p) => (
-          <li key={p.id} className="card space-y-2 border rounded p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <PostCategoryBadge category={p.postCategory} />
-                {p.hidden && (
-                  <span className="text-xs bg-gray-400 text-white px-2 py-1 rounded">非公開</span>
-                )}
-              </div>
-              {/* 右上に配置したい場合はこの位置に配置 */}
+      {!loading && !error && posts.map((p) => (
+        <article key={p.id} className="bg-white border rounded p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleString()}</div>
+              <h2 className="text-lg font-semibold">{p.title}</h2>
+              <div className="text-xs text-gray-500">{p.type}</div>
             </div>
+            <ReportButton targetId={p.id} targetType="post" />
+          </div>
 
-            <div className="text-sm font-medium">{p.title || '(無題)'}</div>
-            <div className="text-sm whitespace-pre-line">{p.body}</div>
+          <p className="mt-3 whitespace-pre-wrap">{p.content}</p>
 
-            <div className="flex gap-2">
-              <ReportButton targetType="post" targetId={p.id} />
-            </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button className="rounded bg-green-600 text-white px-3 py-1" onClick={() => onVote(p.id, 'agree')}>
+              賛成 {p.agreeCount ?? 0}
+            </button>
+            <button className="rounded bg-red-600 text-white px-3 py-1" onClick={() => onVote(p.id, 'disagree')}>
+              反対 {p.disagreeCount ?? 0}
+            </button>
+            <span className="text-sm text-gray-600">コメント {p.commentCount ?? 0}</span>
+          </div>
 
+          <div className="mt-4">
             <CommentsSection postId={p.id} />
-          </li>
-        ))}
-      </ul>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }

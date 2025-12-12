@@ -1,8 +1,13 @@
-import { IsString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { CreateCommentDto } from './create-comment.dto';
 
-// 返信作成APIでも mediaId を利用可能にするため、CreateCommentDto を継承
+/**
+ * CreateReplyDto: inherits CreateCommentDto, defines body (no override keyword)
+ */
 export class CreateReplyDto extends CreateCommentDto {
   @IsString()
-  override body: string;
+  body: string;
+
+  @IsOptional()
+  mediaId?: string;
 }

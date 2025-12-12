@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { Post } from '../../entities/post.entity';
-import { Comment } from '../../entities/comment.entity';
-import { Vote } from '../../entities/vote.entity';
-import { Follow } from '../../entities/follow.entity';
-import { UserRole } from '../../enums/user-role.enum';
-import { VoteChoice } from '../../enums/vote-choice.enum';
+import { User } from 'src/entities/user.entity';
+import { Post } from 'src/entities/post.entity';
+import { Comment } from 'src/entities/comment.entity';
+import { Vote } from 'src/entities/vote.entity';
+import { Follow } from 'src/entities/follow.entity';
+import { UserRoleEnum } from 'src/enums/user-role.enum';
+import { VoteChoice } from 'src/enums/vote-choice.enum';
 
 @Injectable()
 export class AnalyticsService {
@@ -19,10 +19,10 @@ export class AnalyticsService {
     @InjectRepository(Follow) private readonly follows: Repository<Follow>,
   ) {}
 
-  async assertPolitician(userId: string) {
+  private async assertPolitician(userId: string) {
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    if (user.role !== UserRole.POLITICIAN && user.role !== UserRole.ADMIN) {
+    if (user.role !== UserRoleEnum.POLITICIAN && user.role !== UserRoleEnum.ADMIN) {
       throw new NotFoundException('Not a politician');
     }
     return user;
@@ -50,7 +50,6 @@ export class AnalyticsService {
       });
     }
 
-    // 最新投稿順
     result.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
     return result;
   }
@@ -73,15 +72,13 @@ export class AnalyticsService {
     };
 
     for (const r of rows) {
-      const age = (r.follower as any)?.ageGroup ?? 'unknown';
-      const regionName = (r.follower as any)?.region?.name ?? 'unknown';
-      const partyName = (r.follower as any)?.supportedParty?.name ?? 'unknown';
-
+      const age = (r as any).follower?.ageGroup ?? 'unknown';
+      const regionName = (r as any).follower?.region?.name ?? 'unknown';
+      const partyName = (r as any).follower?.supportedParty?.name ?? 'unknown';
       agg.ageGroup[age] = (agg.ageGroup[age] || 0) + 1;
       agg.region[regionName] = (agg.region[regionName] || 0) + 1;
       agg.party[partyName] = (agg.party[partyName] || 0) + 1;
     }
-
     return agg;
   }
 
@@ -94,9 +91,9 @@ export class AnalyticsService {
       lines.push(
         [
           r.postId,
-          this.escapeCsv(r.title),
+          escapeCsv(r.title),
           r.type,
-          r.createdAt.toISOString(),
+          new Date(r.createdAt).toISOString(),
           r.votes.agree,
           r.votes.disagree,
           r.votes.total,
@@ -105,13 +102,10 @@ export class AnalyticsService {
       );
     }
     return lines.join('\n');
-  }
 
-  private escapeCsv(val: any) {
-    const s = String(val ?? '');
-    if (/[",\n]/.test(s)) {
-      return `"${s.replace(/"/g, '""')}"`;
+    function escapeCsv(val: any) {
+      const s = String(val ?? '');
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     }
-    return s;
   }
 }

@@ -1,3 +1,5 @@
+// If deps fail to resolve, run: rm -rf node_modules && npm ci
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -14,6 +16,7 @@ import { Region } from './entities/region.entity';
 import { Party } from './entities/party.entity';
 import { Post } from './entities/post.entity';
 import { Comment } from './entities/comment.entity';
+import { CommentReaction } from './entities/comment-reaction.entity';
 import { Vote } from './entities/vote.entity';
 import { Follow } from './entities/follow.entity';
 import { PoliticianProfile, FundingSpendingItem } from './entities/politician-profile.entity';
@@ -26,12 +29,11 @@ import { Notification } from './entities/notification.entity';
 // Modules
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { PoliticiansModule } from './modules/politicians/politicians.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { VotesModule } from './modules/votes/votes.module';
 import { FollowsModule } from './modules/follows/follows.module';
-import { SearchModule } from './modules/search/search.module';
+import { PoliticiansModule } from './modules/politicians/politicians.module';
 import { SurveysModule } from './modules/surveys/surveys.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -43,10 +45,7 @@ import { MediaModule } from './modules/media/media.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 30,
-    }),
+    ThrottlerModule.forRoot({ ttl: 60, limit: 30 }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
@@ -57,7 +56,7 @@ import { MediaModule } from './modules/media/media.module';
         password: cfg.get<string>('DB_PASS'),
         database: cfg.get<string>('DB_NAME'),
         entities: [
-          User, Region, Party, Post, Comment, Vote, Follow,
+          User, Region, Party, Post, Comment, CommentReaction, Vote, Follow,
           PoliticianProfile, FundingSpendingItem,
           Media,
           Survey, SurveyResponse,
@@ -70,12 +69,11 @@ import { MediaModule } from './modules/media/media.module';
     }),
     AuthModule,
     UsersModule,
-    PoliticiansModule,
     PostsModule,
     CommentsModule,
     VotesModule,
     FollowsModule,
-    SearchModule,
+    PoliticiansModule,
     SurveysModule,
     WalletModule,
     NotificationsModule,

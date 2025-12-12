@@ -1,21 +1,31 @@
-// 修正前: import api, { unwrap } from './api'
-// 修正後: 名前付き import に統一
 import { apiFetchWithAuth, unwrap } from './api';
 
-// 例: 追加のユーティリティが必要ならここで再エクスポートも可能
+export async function createReport(
+  targetId: string,
+  targetType: 'post' | 'comment' | 'user',
+  reason?: string,
+) {
+  const res = await apiFetchWithAuth('/reports', {
+    method: 'POST',
+    body: JSON.stringify({ targetId, targetType, reason: reason ?? '' }),
+  });
+  return unwrap(res);
+}
+
 export async function verifyEmail(token: string) {
-  return apiFetchWithAuth(`/auth/verify-email`, {
+  const res = await apiFetchWithAuth('/auth/verify-email', {
     method: 'POST',
     body: JSON.stringify({ token }),
   });
+  return unwrap(res);
 }
 
 export async function verifyPhone(code: string) {
-  return apiFetchWithAuth(`/auth/verify-phone`, {
+  const res = await apiFetchWithAuth('/auth/verify-phone', {
     method: 'POST',
     body: JSON.stringify({ code }),
   });
+  return unwrap(res);
 }
 
-// unwrap が必要な場所で利用
-export { unwrap };
+export { createReport, verifyEmail, verifyPhone }
