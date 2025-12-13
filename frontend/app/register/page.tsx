@@ -1,20 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { API_BASE } from '../../lib/api';
-import { PREFECTURES, CITIES_BY_PREF_CODE } from '../../lib/japanLocation';
+import { PREFECTURES, CITIES_BY_PREF } from '../../lib/japanLocation';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [ageGroup, setAgeGroup] = useState('twenties');
-  const [prefCode, setPrefCode] = useState('');
-  const [cityCode, setCityCode] = useState('');
+
+  // 名称ベースの選択（prefName / cityName）
+  const [prefName, setPrefName] = useState('');
+  const [cityName, setCityName] = useState('');
+
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // KYC optional upload
+  // KYC 任意アップロード
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [myNumberFile, setMyNumberFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -22,8 +25,14 @@ export default function RegisterPage() {
   const [myNumberMediaId, setMyNumberMediaId] = useState<string | null>(null);
 
   useEffect(() => {
-    setCityCode('');
-  }, [prefCode]);
+    // 都道府県が変わったら市区町村選択をリセット
+    setCityName('');
+  }, [prefName]);
+
+  const cities = useMemo(() => {
+    if (!prefName) return [];
+    return CITIES_BY_PREF[prefName] || [];
+  }, [prefName]);
 
   async function uploadKyc(file: File): Promise<string | null> {
     const form = new FormData();
@@ -57,6 +66,7 @@ export default function RegisterPage() {
       return;
     }
 
+    // 任意アップロード
     if (licenseFile) {
       const id = await uploadKyc(licenseFile);
       if (id) setLicenseMediaId(id);
@@ -66,7 +76,8 @@ export default function RegisterPage() {
       if (id) setMyNumberMediaId(id);
     }
 
-    const regionId = cityCode || prefCode || '';
+    // regionId は cityName → prefName の優先で名称ベースを送信
+    const regionId = cityName || prefName || '';
 
     const payload = {
       name,
@@ -127,17 +138,17 @@ export default function RegisterPage() {
 
         <div className="grid grid-cols-2 gap-3 col-span-2">
           <label>
-            <span className="block text-sm text-gray-600">都道府県</span>
-            <select className="border rounded px-3 py-2 w-full" value={prefCode} onChange={(e)=>setPrefCode(e.target.value)}>
+            <span className="block text-sm text-gray-600">都道府県（名称）</span>
+            <select className="border rounded px-3 py-2 w-full" value={prefName} onChange={(e)=>setPrefName(e.target.value)}>
               <option value="">選択してください</option>
-              {PREFECTURES.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
+              {PREFECTURES.map((p) => <option key={p.code} value={p.name}>{p.name}</option>)}
             </select>
           </label>
           <label>
-            <span className="block text-sm text-gray-600">市区町村</span>
-            <select className="border rounded px-3 py-2 w-full" value={cityCode} onChange={(e)=>setCityCode(e.target.value)} disabled={!prefCode}>
+            <span className="block text-sm text-gray-600">市区町村（名称）</span>
+            <select className="border rounded px-3 py-2 w-full" value={cityName} onChange={(e)=>setCityName(e.target.value)} disabled={!prefName}>
               <option value="">選択してください</option>
-              {(CITIES_BY_PREF_CODE[prefCode] || []).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+              {cities.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
         </div>

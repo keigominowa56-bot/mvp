@@ -1,27 +1,11 @@
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
-import { AgeGroup } from '../../enums/age-group.enum';
+export type AgeGroup = 'teen' | 'twenties' | 'thirties' | 'forties' | 'fifties' | 'sixties_plus';
 
 export class RegisterUserDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  nickname: string;
-
-  @IsEnum(AgeGroup)
-  ageGroup: AgeGroup;
-
-  @IsOptional()
-  @IsString()
+  name!: string;
+  nickname!: string;
+  ageGroup!: AgeGroup;
+  phone!: string;
+  email!: string;
+  password!: string;
   regionId?: string;
-
-  @IsString()
-  phone: string;
-
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @MinLength(8)
-  password: string;
 }

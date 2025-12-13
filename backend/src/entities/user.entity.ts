@@ -1,55 +1,83 @@
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Region } from './region.entity';
-import { Party } from './party.entity';
-import type { UserRole } from '../enums/user-role.enum';
-import type { KycStatus } from '../enums/kyc-status.enum';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import type { UserRole } from 'src/enums/user-role.enum';
+import type { KycStatus } from 'src/enums/kyc-status.enum';
+import { Region } from 'src/entities/region.entity';
+import { Party } from 'src/entities/party.entity';
+import { Member } from 'src/entities/member.entity';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Index({ unique: true }) @Column({ unique: true }) email: string;
-  @Index({ unique: true }) @Column({ unique: true }) phone: string;
+  @Index({ unique: true })
+  @Column({ unique: true })
+  email!: string;
 
-  @Column() passwordHash: string;
+  @Index({ unique: true })
+  @Column({ unique: true, nullable: true })
+  phone!: string | null;
 
-  @Column() name: string;
+  @Column()
+  passwordHash!: string;
 
-  @Index({ unique: true }) @Column({ unique: true }) nickname: string;
+  @Column()
+  name!: string;
+
+  @Index({ unique: true })
+  @Column({ unique: true })
+  nickname!: string;
 
   @Column({ type: 'varchar', length: 32, default: 'user' })
-  role: UserRole;
+  role!: UserRole;
 
   @Column({ type: 'varchar', length: 32, default: 'pending' })
-  kycStatus: KycStatus;
+  kycStatus!: KycStatus;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
-  ageGroup?: string;
+  ageGroup!: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  age?: number; // optional (admin UI compatibility if needed)
+  @Column({ nullable: true })
+  regionId!: string | null;
 
-  @Column({ nullable: true }) regionId?: string;
-  @ManyToOne(() => Region, { nullable: true }) region?: Region | null;
+  @ManyToOne(() => Region, { nullable: true })
+  region!: Region | null;
 
-  @Column({ nullable: true }) supportedPartyId?: string;
-  @ManyToOne(() => Party, { nullable: true }) supportedParty?: Party | null;
+  @Column({ nullable: true })
+  supportedPartyId!: string | null;
 
-  @Column({ nullable: true }) planTier?: string;
-  @Column({ nullable: true }) addressPref?: string;
-  @Column({ nullable: true }) addressCity?: string;
-  @Column({ nullable: true }) emailVerifyToken?: string | null;
-  @Column({ default: false }) emailVerified?: boolean;
-  @Column({ nullable: true }) phoneNumber?: string;
-  @Column({ nullable: true }) phoneVerifyCode?: string | null;
-  @Column({ default: false }) phoneVerified?: boolean;
-  @Column({ type: 'varchar', length: 16, default: 'active' }) status?: 'active' | 'banned';
+  @ManyToOne(() => Party, { nullable: true })
+  supportedParty!: Party | null;
 
-  @CreateDateColumn() createdAt: Date;
-  @UpdateDateColumn() updatedAt: Date;
+  // 追加フィールド（コントローラ参照に合わせる）
+  @Column({ type: 'varchar', nullable: true })
+  emailVerifyToken!: string | null;
 
-  // Optional relation placeholder: align with real Member entity if exists
-  @OneToMany(() => Object as any, () => ({}))
-  members?: any[];
+  @Column({ type: 'boolean', default: false })
+  emailVerified!: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  phoneNumber!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  phoneVerifyCode!: string | null;
+
+  // Member との関係（member.entity.ts が user.members を参照）
+  @OneToMany(() => Member, (member) => member.user)
+  members!: Member[];
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

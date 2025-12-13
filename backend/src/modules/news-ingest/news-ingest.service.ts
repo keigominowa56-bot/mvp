@@ -50,7 +50,9 @@ export class NewsIngestService {
           const link = (m.match(linkRegex)?.[1] || '').trim();
           if (title && link) items.push({ title, link });
         }
-      } catch { /* ignore */ }
+      } catch {
+        // ignore feed error
+      }
     }
     return items;
   }
@@ -70,16 +72,16 @@ export class NewsIngestService {
       .select(['p.id', 'p.content'])
       .getMany();
 
-    const existingHashes = new Set<string>();
+    const hashes = new Set<string>();
     for (const p of existing) {
       const match = p.content?.match(/link_hash:([a-f0-9]{64})/);
-      if (match?.[1]) existingHashes.add(match[1]);
+      if (match?.[1]) hashes.add(match[1]);
     }
 
     let created = 0;
     for (const item of items) {
       const h = this.hash(item.link);
-      if (existingHashes.has(h)) continue;
+      if (hashes.has(h)) continue;
       const content = `RSSニュース\nリンク: ${item.link}\nlink_hash:${h}`;
       const post = this.posts.create({
         authorUserId: await this.systemUserId(),
@@ -90,7 +92,7 @@ export class NewsIngestService {
         regionId: null,
       });
       await this.posts.save(post);
-      existingHashes.add(h);
+      hashes.add(h);
       created++;
     }
 
