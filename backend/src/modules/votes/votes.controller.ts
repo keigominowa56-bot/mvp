@@ -10,7 +10,7 @@ export class VotesController {
   constructor(private readonly votes: VotesService) {}
 
   @UseGuards(AuthGuard('jwt'))
-  @Throttle(5, 60)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post()
   async cast(@Param('postId') postId: string, @Body() dto: CreateVoteDto, @Req() req: any) {
     const userId = req.user?.sub ?? req.user?.id;

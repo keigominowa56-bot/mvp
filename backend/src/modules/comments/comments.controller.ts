@@ -15,7 +15,7 @@ export class CommentsController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Throttle(10, 60)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   async create(@Param('postId') postId: string, @Body() dto: CreateCommentDto, @Req() req: any) {
     const userId = req.user?.sub ?? req.user?.id;

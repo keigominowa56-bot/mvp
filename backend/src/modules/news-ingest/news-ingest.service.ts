@@ -16,7 +16,7 @@ export class NewsIngestService {
     @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
-  @Cron(CronExpression.EVERY_15_MINUTES)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async pollRss() {
     await this.pullAndCreate();
   }

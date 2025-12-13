@@ -27,7 +27,8 @@ export class DevSeedController {
     } as any);
 
     // 単体保存の戻り値（User）として扱う
-    const saved: User = await this.users.save(user);
-    return { ok: true, id: saved.id };
+    const saved = await this.users.save(user);
+    const savedUser = Array.isArray(saved) ? saved[0] : saved;
+    return { ok: true, id: savedUser.id };
   }
 }
