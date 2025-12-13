@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Comment } from '../../entities/comment.entity';
 import { Post } from '../../entities/post.entity';
 import { User } from '../../entities/user.entity';
@@ -13,10 +13,10 @@ export class CommentsService {
     @InjectRepository(Comment) private readonly comments: Repository<Comment>,
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
-    private readonly users: UsersService,
+    private readonly _users: UsersService,
   ) {}
 
-  async list(postId: string, cursor?: string, limit = 20) {
+  async list(postId: string, _cursor?: string, limit = 20) {
     const qb = this.comments.createQueryBuilder('c')
       .where('c.postId = :postId', { postId })
       .leftJoinAndSelect('c.author', 'author')

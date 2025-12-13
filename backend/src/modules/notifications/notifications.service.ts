@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Notification } from '../../entities/notification.entity';
 import { NotificationType } from '../../enums/notification-type.enum';
 
@@ -20,7 +20,7 @@ export class NotificationsService {
   }
 
   async listUnread(userId: string) {
-    return this.notifications.find({ where: { userId, readAt: null }, order: { createdAt: 'DESC' } });
+    return this.notifications.find({ where: { userId, readAt: IsNull() }, order: { createdAt: 'DESC' } });
   }
 
   async markRead(id: string, userId: string) {

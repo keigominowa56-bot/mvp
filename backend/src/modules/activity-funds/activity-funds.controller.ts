@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { ActivityFundsService } from './activity-funds.service';
@@ -35,10 +35,10 @@ export class ActivityFundsController {
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   async importCsv(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() _file: Express.Multer.File,
     @Param('memberId') memberId: string,
   ) {
-    const dummyData = [];
+    const dummyData: any[] = [];
     return this.activityFundsService.importFromCsv(dummyData, memberId);
   }
   

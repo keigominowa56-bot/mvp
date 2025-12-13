@@ -9,5 +9,3 @@ export enum UserRoleEnum {
 }
 
 export const USER_ROLES = ['user', 'politician', 'admin'] as const;
-
-export { UserRoleEnum, USER_ROLES }

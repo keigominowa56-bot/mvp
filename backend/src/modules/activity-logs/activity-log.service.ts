@@ -9,7 +9,7 @@ export class ActivityLogService {
     @InjectRepository(ActivityLog) private readonly repo: Repository<ActivityLog>,
   ) {}
 
-  async log(actorUserId: string | null, action: string, data: Record<string, any>) {
+  async log(_actorUserId: string | null, action: string, data: Record<string, any>) {
     // 暫定：actorUserId をエンティティに存在しないため保存対象から外す
     const log = this.repo.create({
       action,

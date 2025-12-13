@@ -24,7 +24,7 @@ const loginLimiter = new SimpleRateLimiter(5, 60);   // 1分に5回
 const postLimiter  = new SimpleRateLimiter(30, 60);  // 1分に30回
 const voteLimiter  = new SimpleRateLimiter(60, 60);  // 1分に60回
 
-export function rateLimitMiddleware(req: Request, res: Response, next: NextFunction) {
+export function rateLimitMiddleware(req: Request, _res: Response, next: NextFunction) {
   try {
     const path = req.path || '';
     const ip = req.ip || (req.headers['x-forwarded-for']?.toString() || 'ip-unknown');

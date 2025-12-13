@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Inject } from '@nestjs/common';
@@ -6,7 +6,7 @@ import { ExtractJwt } from 'passport-jwt';
 
 @Injectable()
 export class FirebaseStrategy extends PassportStrategy(Strategy, 'firebase') {
-  constructor(@Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: any) {
+  constructor(@Inject('FIREBASE_ADMIN') _firebaseAdmin: any) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, IsNull, Repository } from 'typeorm';
 import { Survey } from '../../entities/survey.entity';
 import { SurveyResponse } from '../../entities/survey-response.entity';
 import { User } from '../../entities/user.entity';
@@ -20,8 +20,8 @@ export class SurveysService {
     const now = new Date();
     const all = await this.surveys.find({
       where: [
-        { startAt: null, endAt: null },
-        { startAt: Between(new Date(0), now), endAt: null },
+        { startAt: IsNull(), endAt: IsNull() },
+        { startAt: Between(new Date(0), now), endAt: IsNull() },
         { startAt: Between(new Date(0), now), endAt: Between(now, new Date('9999-12-31')) },
       ],
     });

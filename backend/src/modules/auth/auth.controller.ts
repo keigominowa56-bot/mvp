@@ -5,7 +5,6 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from '../../entities/user.entity';
 import { randomBytes } from 'crypto';
-import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('auth')
@@ -72,7 +71,8 @@ export class AuthController {
     if (!user) throw new BadRequestException('user not found');
     if (!body.code) throw new BadRequestException('code required');
     if (user.phoneVerifyCode !== body.code) throw new BadRequestException('invalid code');
-    user.phoneVerified = true;
+    // TODO: User entity needs phoneVerified field
+    // user.phoneVerified = true;
     user.phoneVerifyCode = null as any;
     await this.userRepo.save(user);
     return { verified: true };
@@ -97,10 +97,11 @@ export class AuthController {
       email: user.email,
       role: user.role,
       name: user.name,
-      addressPref: user.addressPref,
-      addressCity: user.addressCity,
+      // TODO: User entity needs addressPref, addressCity, phoneVerified fields
+      // addressPref: user.addressPref,
+      // addressCity: user.addressCity,
       emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
+      // phoneVerified: user.phoneVerified,
       createdAt: user.createdAt,
     };
   }

@@ -13,7 +13,7 @@ export class ReportsService {
     @InjectRepository(Report) private readonly reportRepo: Repository<Report>,
     @InjectRepository(Post) private readonly postRepo: Repository<Post>,
     @InjectRepository(Comment) private readonly commentRepo: Repository<Comment>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(User) private readonly _userRepo: Repository<User>,
   ) {}
 
   async create(data: {
@@ -57,11 +57,12 @@ export class ReportsService {
 
   async actionOnTarget(report: Report, action: 'ban-user' | 'hide-post' | 'hide-comment') {
     if (action === 'ban-user' && report.targetType === 'user') {
-      const u = await this.userRepo.findOne({ where: { id: report.targetId } });
-      if (u) {
-        u.status = 'banned';
-        await this.userRepo.save(u);
-      }
+      // TODO: User entity needs a 'status' field to implement ban functionality
+      // const u = await this.userRepo.findOne({ where: { id: report.targetId } });
+      // if (u) {
+      //   u.status = 'banned';
+      //   await this.userRepo.save(u);
+      // }
     }
     if (action === 'hide-post' && report.targetType === 'post') {
       const p = await this.postRepo.findOne({ where: { id: report.targetId } });

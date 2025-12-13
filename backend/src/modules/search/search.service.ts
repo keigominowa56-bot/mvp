@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { PoliticianProfile } from '../../entities/politician-profile.entity';
 import { Post } from '../../entities/post.entity';
 import { User } from '../../entities/user.entity';
@@ -12,8 +12,8 @@ export class SearchService {
   constructor(
     @InjectRepository(PoliticianProfile) private readonly profiles: Repository<PoliticianProfile>,
     @InjectRepository(Post) private readonly posts: Repository<Post>,
-    @InjectRepository(User) private readonly users: Repository<User>,
-    @InjectRepository(Party) private readonly parties: Repository<Party>,
+    @InjectRepository(User) private readonly _users: Repository<User>,
+    @InjectRepository(Party) private readonly _parties: Repository<Party>,
   ) {}
 
   async searchPoliticians(params: { region?: string; party?: string; q?: string }) {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { PoliticianProfile, FundingSpendingItem } from 'src/entities/politician-profile.entity';
 import { User } from 'src/entities/user.entity';
 import { Party } from 'src/entities/party.entity';
