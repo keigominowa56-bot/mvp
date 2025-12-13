@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Post } from '../../entities/post.entity';
-import { PostType } from '../../enums/post-type.enum';
-import { User } from '../../entities/user.entity';
+import { Post } from '../entities/post.entity';
+import { PostType } from '../enums/post-type.enum';
+import { User } from '../entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { createHash } from 'crypto';
@@ -14,25 +14,23 @@ import { RssNewsSource } from './rss-news.source';
 export class NewsIngestService {
   private readonly logger = new Logger(NewsIngestService.name);
   private readonly source: RssNewsSource;
-  private readonly cronExpr: string;
 
   constructor(
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(User) private readonly users: Repository<User>,
-    private readonly cfg: ConfigService,
+    _cfg: ConfigService,
   ) {
-    const feeds = (cfg.get<string>('RSS_FEEDS') || '')
+    const feeds = (_cfg.get<string>('RSS_FEEDS') || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
-    const sourceName = cfg.get<string>('NEWS_SOURCE_NAME') || 'RSS';
+    const sourceName = _cfg.get<string>('NEWS_SOURCE_NAME') || 'RSS';
     this.source = new RssNewsSource(feeds, sourceName);
-    this.cronExpr = cfg.get<string>('NEWS_INGEST_INTERVAL_CRON') || CronExpression.EVERY_15_MINUTES;
   }
 
   // 動的cronはデコレータでは設定できないため、初回起動時に手動トリガや外部スケジューラを使うのが一般的。
-  // ここでは固定のEVERY_15_MINUTESをデコレータに使いつつ、環境変数が異なる場合は起動時に即時実行します。
-  @Cron(CronExpression.EVERY_15_MINUTES)
+  // ここでは固定のEVERY_30_MINUTESをデコレータに使います。
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async scheduledPull() {
     await this.pullAndCreate();
   }
@@ -47,7 +45,7 @@ export class NewsIngestService {
   }
 
   async pullAndCreate() {
-    const items = await this.source.fetch();
+    const items: NewsItem[] = await this.source.fetch();
     if (!items.length) return;
 
     // 重複排除用に既存ニュースのリンクハッシュを抽出

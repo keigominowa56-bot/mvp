@@ -8,7 +8,7 @@ import { User } from '../../entities/user.entity';
 export class FundingService {
   constructor(
     @InjectRepository(FundingRecord) private readonly frRepo: Repository<FundingRecord>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(User) private readonly _userRepo: Repository<User>,
   ) {}
 
   async list(politicianId: string, from?: string, to?: string) {

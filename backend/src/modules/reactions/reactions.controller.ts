@@ -14,7 +14,7 @@ export class ReactionsController {
   }
 
   @Get('my')
-  async my(@Query('targetId') targetId: string, @Request() req) {
+  async my(@Query('targetId') targetId: string, @Request() req: any) {
     return this.service.getMyReaction(targetId, req.user.sub);
   }
 
@@ -22,7 +22,7 @@ export class ReactionsController {
   async toggle(
     @Body('targetId') targetId: string,
     @Body('type') type: 'like' | 'agree' | 'disagree',
-    @Request() req,
+    @Request() req: any,
   ) {
     const result = await this.service.toggle(targetId, req.user.sub, type as ReactionType);
     const summary = await this.service.getSummary(targetId);

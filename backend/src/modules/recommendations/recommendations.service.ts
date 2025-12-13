@@ -8,7 +8,7 @@ import { Post } from '../posts/post.entity';
 export class RecommendationsService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
-    @InjectRepository(Post) private readonly posts: Repository<Post>,
+    @InjectRepository(Post) private readonly _posts: Repository<Post>,
   ) {}
 
   // ダミー: 最近作成されたユーザー上位を返す

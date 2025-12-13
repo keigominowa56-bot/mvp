@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Post } from '../posts/post.entity';
 import { Notification } from '../../entities/notification.entity';
 

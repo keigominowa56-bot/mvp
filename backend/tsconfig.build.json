@@ -1,7 +1,13 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "sourceMap": false
+    "sourceMap": false,
+    "strictPropertyInitialization": false,
+    "baseUrl": ".",
+    "paths": {
+      "src/": ["src/"],
+      "src/*": ["src/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "__tests__/**"]
