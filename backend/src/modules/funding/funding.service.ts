@@ -1,47 +1,42 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
-import { FundingRecord } from '../../entities/funding-record.entity';
-import { User } from '../../entities/user.entity';
+import { Funding } from 'src/entities/funding.entity';
+
+function toDate(d?: string | Date): Date | undefined {
+  if (!d) return undefined;
+  if (d instanceof Date) return d;
+  const parsed = new Date(d);
+  return isNaN(parsed.getTime()) ? undefined : parsed;
+}
 
 @Injectable()
 export class FundingService {
-  constructor(
-    @InjectRepository(FundingRecord) private readonly frRepo: Repository<FundingRecord>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
-  ) {}
+  constructor(@InjectRepository(Funding) private readonly fundingRepo: Repository<Funding>) {}
 
-  async list(politicianId: string, from?: string, to?: string) {
-    const where: any = { politicianId };
-    if (from && to) where.date = Between(from, to);
-    const items = await this.frRepo.find({ where, order: { date: 'DESC' } });
-    return items;
+  async list(id?: string, from?: string | Date, to?: string | Date) {
+    const where: any = {};
+    if (id) where.politicianId = id;
+    const fromDate = toDate(from);
+    const toDateVal = toDate(to);
+    if (fromDate && toDateVal) where.createdAt = Between(fromDate, toDateVal);
+    return this.fundingRepo.find({ where, order: { createdAt: 'DESC' } });
   }
 
-  async summary(politicianId: string, from?: string, to?: string) {
-    const items = await this.list(politicianId, from, to);
-    const byCategory: Record<string, number> = {};
-    let total = 0;
-    for (const r of items) {
-      const c = r.category || 'その他';
-      byCategory[c] = (byCategory[c] || 0) + r.amount;
-      total += r.amount;
-    }
-    return { total, byCategory };
+  async summary(id: string, from?: string | Date, to?: string | Date) {
+    const items = await this.list(id, from, to);
+    const total = items.reduce((sum, f) => sum + (f.amount || 0), 0);
+    return { total, count: items.length };
   }
 
-  async create(politicianId: string, actor: User, data: { amount: number; category?: string; description?: string; date?: string }) {
-    if (actor.role !== 'admin' && actor.id !== politicianId) {
-      throw new ForbiddenException('not allowed');
-    }
-    if (!data.amount || data.amount <= 0) throw new BadRequestException('amount must be > 0');
-    const fr = this.frRepo.create({
+  async create(politicianId: string, actor: string | { id: string }, body: { amount: number; note?: string }) {
+    const actorUserId = typeof actor === 'string' ? actor : actor.id;
+    const f = this.fundingRepo.create({
       politicianId,
-      amount: data.amount,
-      category: data.category,
-      description: data.description,
-      date: data.date || new Date().toISOString().slice(0, 10),
-    });
-    return this.frRepo.save(fr);
+      actorUserId,
+      amount: body.amount,
+      note: body.note ?? null,
+    } as any);
+    return this.fundingRepo.save(f);
   }
 }

@@ -6,28 +6,41 @@ import { User } from 'src/entities/user.entity';
 
 @Controller('auth/dev-seed')
 export class DevSeedController {
-  constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
+  constructor(@InjectRepository(User) private readonly userRepo: Repository<User>) {}
 
   @Post('user')
-  async seedUser(@Body() body: { email: string; password: string; nickname?: string }) {
-    const exists = await this.users.findOne({ where: { email: body.email } });
-    if (exists) return { ok: true, id: exists.id };
+  async seedUser(
+    @Body()
+    body: {
+      email: string;
+      password: string;
+      name?: string;
+      nickname?: string | null;
+      phoneNumber?: string | null;
+      ageGroup?: string | null;
+    },
+  ) {
+    const exists = await this.userRepo.findOne({ where: { email: body.email } });
+    if (exists) {
+      return { ok: true, id: exists.id };
+    }
 
-    const user = this.users.create({
+    const user = this.userRepo.create({
       email: body.email,
       passwordHash: await bcrypt.hash(body.password, 10),
-      name: body.email.split('@')[0],
-      nickname: body.nickname || body.email.split('@')[0],
-      role: 'user',
-      kycStatus: 'pending',
+      name: body.name || null,
+      nickname: body.nickname ?? null,
+      phoneNumber: body.phoneNumber ?? null,
+      ageGroup: body.ageGroup ?? null,
+      role: 'citizen',
+      status: 'active',
       emailVerified: false,
-      phoneNumber: null,
-      phoneVerifyCode: null,
-      emailVerifyToken: null,
+      phoneVerified: false,
     } as any);
 
-    // 単体保存の戻り値（User）として扱う
-    const saved = await this.users.save(user);
-    return { ok: true, id: saved.id };
+    // 単体保存の戻り値（型注釈を外し安全に id を取得）
+    const saved = await this.userRepo.save(user);
+    const id = Array.isArray(saved) ? (saved[0] as any).id : (saved as any).id;
+    return { ok: true, id };
   }
 }

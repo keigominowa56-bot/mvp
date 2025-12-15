@@ -3,26 +3,30 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
 @Entity('audit_logs')
 export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Index()
-  @Column({ nullable: true })
-  actorUserId: string | null;
+  @Column({ type: 'uuid', nullable: true })
+  actorUserId!: string | null;
 
   @Index()
-  @Column({ length: 64 })
-  action: string; // 例: 'vote.cast', 'wallet.reward', 'comment.create'
-
-  @Column({ length: 64, nullable: true })
-  targetType: string | null; // 'post' | 'comment' | 'survey' | 'transaction' 等
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  targetType!: string | null;
 
   @Index()
-  @Column({ nullable: true })
-  targetId: string | null;
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  targetId!: string | null;
 
-  @Column({ type: 'json', nullable: true })
-  meta: Record<string, any> | null;
+  @Index()
+  @Column({ type: 'varchar', length: 64 })
+  action!: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  message!: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  meta!: Record<string, any> | null;
+
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
 }

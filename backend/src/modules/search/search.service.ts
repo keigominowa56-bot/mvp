@@ -1,47 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
-import { PoliticianProfile } from '../../entities/politician-profile.entity';
-import { Post } from '../../entities/post.entity';
-import { User } from '../../entities/user.entity';
-import { Party } from '../../entities/party.entity';
-import { PostType } from '../../enums/post-type.enum';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Post } from 'src/entities/post.entity';
+import { Politician } from 'src/entities/politician.entity';
 
 @Injectable()
 export class SearchService {
   constructor(
-    @InjectRepository(PoliticianProfile) private readonly profiles: Repository<PoliticianProfile>,
     @InjectRepository(Post) private readonly posts: Repository<Post>,
-    @InjectRepository(User) private readonly users: Repository<User>,
-    @InjectRepository(Party) private readonly parties: Repository<Party>,
+    @InjectRepository(Politician) private readonly politicians: Repository<Politician>,
   ) {}
 
   async searchPoliticians(params: { region?: string; party?: string; q?: string }) {
-    const qb = this.profiles.createQueryBuilder('p')
-      .leftJoinAndSelect('p.user', 'user')
-      .leftJoinAndSelect('p.party', 'party');
-
-    if (params.q) qb.andWhere('(user.name ILIKE :q OR p.bio ILIKE :q)', { q: `%${params.q}%` });
-    if (params.party) qb.andWhere('party.id = :partyId OR party.name ILIKE :partyName', { partyId: params.party, partyName: `%${params.party}%` });
-    if (params.region) {
-      qb.leftJoin('user.region', 'region')
-        .andWhere('region.id = :regionId OR region.name ILIKE :regionName', {
-          regionId: params.region,
-          regionName: `%${params.region}%`,
-        });
-    }
-
-    qb.orderBy('p.updatedAt', 'DESC');
-    return qb.getMany();
+    let qb: SelectQueryBuilder<Politician> = this.politicians.createQueryBuilder('p');
+    if (params.region) qb = qb.andWhere('p.regionId = :region', { region: params.region });
+    if (params.party) qb = qb.andWhere('p.partyId = :party', { party: params.party });
+    if (params.q) qb = qb.andWhere('p.name LIKE :q OR p.nickname LIKE :q', { q: `%${params.q}%` });
+    return qb.orderBy('p.createdAt', 'DESC').getMany();
   }
 
-  async searchPosts(params: { q?: string; type?: PostType }) {
-    const qb = this.posts.createQueryBuilder('p').leftJoinAndSelect('p.author', 'author');
-
-    if (params.q) qb.andWhere('(p.title ILIKE :q OR p.content ILIKE :q)', { q: `%${params.q}%` });
-    if (params.type) qb.andWhere('p.type = :type', { type: params.type });
-
-    qb.orderBy('p.createdAt', 'DESC');
-    return qb.getMany();
+  async searchPosts(params: { q?: string; type?: string }) {
+    let qb = this.posts.createQueryBuilder('p');
+    if (params.type) qb = qb.andWhere('p.type = :type', { type: params.type });
+    if (params.q) qb = qb.andWhere('p.title LIKE :q OR p.content LIKE :q', { q: `%${params.q}%` });
+    return qb.orderBy('p.createdAt', 'DESC').getMany();
   }
 }

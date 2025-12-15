@@ -1,40 +1,49 @@
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { User } from './user.entity';
-import { Region } from './region.entity';
-import { PostType } from '../enums/post-type.enum';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from 'src/entities/user.entity';
+import { Vote } from 'src/entities/vote.entity';
 
 @Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Index()
-  @Column()
-  authorUserId: string;
+  @Column({ type: 'uuid', nullable: true })
+  authorUserId!: string | null;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  author: User;
+  @ManyToOne(() => User, (user) => user.posts)
+  author!: User;
 
-  @Column({ type: 'enum', enum: PostType })
-  type: PostType;
+  @OneToMany(() => Vote, (vote) => vote.post)
+  votes!: Vote[];
 
-  @Column({ length: 256 })
-  title: string;
+  @Column({ type: 'varchar', length: 256 })
+  title!: string;
 
   @Column({ type: 'text' })
-  content: string;
+  content!: string;
 
-  // 画像/動画のメディアID（UUID）の配列
-  @Column({ type: 'json', nullable: true })
-  mediaIds: string[] | null;
+  @Column({ type: 'varchar', length: 32 })
+  type!: string;
 
-  // 地域紐付け（任意）
-  @Column({ nullable: true })
-  regionId: string | null;
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  regionId!: string | null;
 
-  @ManyToOne(() => Region, { nullable: true })
-  region?: Region | null;
+  @Column({ type: 'jsonb', nullable: true })
+  mediaIds!: string[] | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

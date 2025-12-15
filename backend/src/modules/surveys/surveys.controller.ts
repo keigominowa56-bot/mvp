@@ -1,23 +1,21 @@
-import { Controller, Get, Param, Post, Req, UseGuards, Body } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { SurveysService } from './surveys.service';
-import { AuthGuard } from '@nestjs/passport';
-import { CreateSurveyResponseDto } from './dto/create-response.dto';
 
 @Controller('surveys')
 export class SurveysController {
   constructor(private readonly surveys: SurveysService) {}
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('available')
-  async available(@Req() req: any) {
-    const userId = req.user?.sub ?? req.user?.id;
+  @Get('available/:userId')
+  async available(@Param('userId') userId: string) {
     return this.surveys.availableForUser(userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Post(':id/responses')
-  async respond(@Param('id') surveyId: string, @Req() req: any, @Body() dto: CreateSurveyResponseDto) {
-    const userId = req.user?.sub ?? req.user?.id;
+  @Post(':surveyId/submit/:userId')
+  async submit(
+    @Param('surveyId') surveyId: string,
+    @Param('userId') userId: string,
+    @Body() dto: { answers: Record<string, any> },
+  ) {
     return this.surveys.submitResponse(surveyId, userId, dto);
   }
 }

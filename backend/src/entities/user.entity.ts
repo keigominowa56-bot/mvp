@@ -3,16 +3,15 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import type { UserRole } from 'src/enums/user-role.enum';
-import type { KycStatus } from 'src/enums/kyc-status.enum';
-import { Region } from 'src/entities/region.entity';
-import { Party } from 'src/entities/party.entity';
 import { Member } from 'src/entities/member.entity';
+import { Post } from 'src/entities/post.entity';
+import { Vote } from 'src/entities/vote.entity';
+
+export type UserStatus = 'pending' | 'approved' | 'rejected';  // 追加
 
 @Entity('users')
 export class User {
@@ -20,64 +19,61 @@ export class User {
   id!: string;
 
   @Index({ unique: true })
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 256, unique: true })
   email!: string;
 
-  @Index({ unique: true })
-  @Column({ unique: true, nullable: true })
-  phone!: string | null;
-
-  @Column()
-  passwordHash!: string;
-
-  @Column()
-  name!: string;
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  name!: string | null;
 
   @Index({ unique: true })
-  @Column({ unique: true })
-  nickname!: string;
+  @Column({ type: 'varchar', length: 128, unique: true, nullable: true })
+  nickname!: string | null;
 
-  @Column({ type: 'varchar', length: 32, default: 'user' })
-  role!: UserRole;
-
-  @Column({ type: 'varchar', length: 32, default: 'pending' })
-  kycStatus!: KycStatus;
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  phoneNumber!: string | null;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
   ageGroup!: string | null;
 
-  @Column({ nullable: true })
-  regionId!: string | null;
-
-  @ManyToOne(() => Region, { nullable: true })
-  region!: Region | null;
-
-  @Column({ nullable: true })
-  supportedPartyId!: string | null;
-
-  @ManyToOne(() => Party, { nullable: true })
-  supportedParty!: Party | null;
-
-  // 追加フィールド（コントローラ参照に合わせる）
-  @Column({ type: 'varchar', nullable: true })
-  emailVerifyToken!: string | null;
+  @Column({ type: 'varchar', length: 256 })
+  passwordHash!: string;
 
   @Column({ type: 'boolean', default: false })
   emailVerified!: boolean;
 
-  @Column({ type: 'varchar', nullable: true })
-  phoneNumber!: string | null;
+  @Column({ type: 'varchar', length: 256, select: false, nullable: true })
+  emailVerifyToken!: string | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'boolean', default: false })
+  phoneVerified!: boolean;
+
+  @Column({ type: 'varchar', length: 64, select: false, nullable: true })
   phoneVerifyCode!: string | null;
 
-  // Member との関係（member.entity.ts が user.members を参照）
+  @Column({ type: 'varchar', length: 32, default: 'pending' })
+  status!: UserStatus;  // ← 型を必ずUserStatus型に
+
+  @Column({ type: 'varchar', length: 32, default: 'citizen' })
+  role!: 'admin' | 'politician' | 'citizen';
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  addressPref!: string | null;
+
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  addressCity!: string | null;
+
   @OneToMany(() => Member, (member) => member.user)
   members!: Member[];
 
-  @CreateDateColumn()
+  @OneToMany(() => Post, (post) => post.author)
+  posts!: Post[];
+
+  @OneToMany(() => Vote, (vote) => vote.user)
+  votes!: Vote[];
+
+  @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
   updatedAt!: Date;
 }

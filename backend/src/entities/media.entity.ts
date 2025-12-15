@@ -1,38 +1,61 @@
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { User } from './user.entity';
-import { MediaType } from '../enums/media-type.enum';
-import { MediaCategory } from '../enums/media-category.enum';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from 'src/entities/user.entity';
 
 @Entity('media')
 export class Media {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
+  // 所有者（アップロードしたユーザー）
   @Index()
-  @Column()
-  ownerUserId: string;
+  @Column({ type: 'uuid', nullable: true })
+  ownerUserId!: string | null;
 
-  @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
-  owner?: User | null;
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'SET NULL', nullable: true })
+  owner!: User | null;
 
-  @Column({ type: 'enum', enum: MediaType })
-  type: MediaType;
+  // カテゴリ（例: avatar, post, document など）
+  @Index()
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  category!: string | null;
 
-  @Column({ type: 'enum', enum: MediaCategory })
-  category: MediaCategory;
+  // メディアタイプ（例: image, video, document）
+  @Index()
+  @Column({ type: 'varchar', length: 64 })
+  type!: string;
 
-  @Column({ length: 2048 })
-  url: string;
+  // ストレージ上の保存パス
+  @Index()
+  @Column({ type: 'varchar', length: 256 })
+  path!: string;
 
-  @Column({ length: 256, nullable: true })
-  originalName: string | null;
+  // アップロード元のファイル名
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  originalName!: string | null;
 
-  @Column({ length: 128, nullable: true })
-  mimeType: string | null;
-
+  // バイトサイズ
   @Column({ type: 'int', nullable: true })
-  size: number | null;
+  sizeBytes!: number | null;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  // MIMEタイプ
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  mimeType!: string | null;
+
+  // 任意メタデータ
+  @Column({ type: 'jsonb', nullable: true })
+  meta!: Record<string, any> | null;
+
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }

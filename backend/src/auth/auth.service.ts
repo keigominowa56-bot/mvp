@@ -9,6 +9,7 @@ type JwtPayload = {
   sub: string;
   email?: string;
   role?: string;
+  nickname?: string | null;
 };
 
 @Injectable()
@@ -21,7 +22,7 @@ export class AuthService {
   async validateUser(id: string, password: string): Promise<User> {
     const user =
       (await this.users.findOne({ where: { email: id } })) ??
-      (await this.users.findOne({ where: { phone: id } }));
+      (await this.users.findOne({ where: { phoneNumber: id } })); // phone -> phoneNumber に修正
     if (!user) throw new UnauthorizedException('User not found');
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
@@ -30,14 +31,20 @@ export class AuthService {
 
   async login(id: string, password: string) {
     const user = await this.validateUser(id, password);
-    const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
+    const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role, nickname: user.nickname };
 
-    // ジェネリック指定を削除（string 戻り値）
     const accessToken = await this.jwt.signAsync(payload, { expiresIn: 900 });
     const refreshToken = await this.jwt.signAsync(payload, { expiresIn: '7d' });
 
     return {
-      user: { id: user.id, email: user.email, role: user.role, nickname: user.nickname },
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        nickname: user.nickname,
+        addressPref: user.addressPref,
+        addressCity: user.addressCity,
+      },
       accessToken,
       refreshToken,
     };

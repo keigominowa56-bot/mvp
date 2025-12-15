@@ -1,77 +1,44 @@
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { User } from './user.entity';
-import { Party } from './party.entity';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('politician_profiles')
 export class PoliticianProfile {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Index({ unique: true })
-  @Column()
-  userId: string;
-
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
-  @Column({ nullable: true, type: 'text' })
-  bio: string | null;
-
-  @Column({ nullable: true })
-  partyId: string | null;
-
-  @ManyToOne(() => Party, { nullable: true })
-  @JoinColumn({ name: 'partyId' })
-  party: Party | null;
-
-  @Column({ nullable: true, type: 'int' })
-  age: number | null;
-
-  // 公約は簡易にJSONで保持（後で別テーブルへ分離可）
-  @Column({ type: 'json', nullable: true })
-  pledges: Array<{ title: string; description?: string }> | null;
-
-  @Column({ nullable: true })
-  fundingReportUrl: string | null;
-
-  @OneToMany(() => FundingSpendingItem, (item) => item.politicianProfile)
-  spendingItems: FundingSpendingItem[];
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-}
-
-@Entity('funding_spending_items')
-export class FundingSpendingItem {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Index()
-  @Column()
-  politicianProfileId: string;
+  @Column({ type: 'uuid' })
+  politicianId!: string;
 
-  @ManyToOne(() => PoliticianProfile, (p) => p.spendingItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'politicianProfileId' })
-  politicianProfile: PoliticianProfile;
+  // プロフィールの各種文字列項目は varchar で明示
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  occupation!: string | null;
 
-  @Index()
-  @Column({ length: 64 })
-  category: string; // 例: 'ads', 'events', 'printing', 'travel' など
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  homepageUrl!: string | null;
 
-  @Column({ type: 'int' })
-  amount: number; // 円
+  // 修正点: Object 型ではなく varchar に変更
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  fundingReportUrl!: string | null;
 
-  @Index()
-  @Column({ type: 'date' })
-  date: string;
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  officeAddress!: string | null;
 
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  phoneNumber!: string | null;
+
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  email!: string | null;
+
+  // 自由記述フィールドは text か jsonb を使用
   @Column({ type: 'text', nullable: true })
-  description: string | null;
+  biography!: string | null;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ type: 'jsonb', nullable: true })
+  extra!: Record<string, any> | null;
+
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }

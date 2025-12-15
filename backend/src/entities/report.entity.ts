@@ -1,36 +1,41 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+
+export type ReportStatus = 'pending' | 'reviewed' | 'actioned' | 'rejected' | 'open' | 'reviewing' | 'resolved' | 'dismissed';
+export type ReportTargetType = 'user' | 'post' | 'comment';
 
 @Entity('reports')
-@Index(['targetType', 'targetId'])
-@Index(['status'])
 export class Report {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column()
-  reporterId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  reporterId!: string;
 
-  @Column({ type: 'varchar' })
-  targetType: 'post' | 'comment' | 'user';
+  @Index()
+  @Column({ type: 'varchar', length: 32 })
+  targetType!: ReportTargetType;
 
-  @Column({ type: 'varchar' })
-  targetId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  targetId!: string;
 
-  @Column({ type: 'varchar' })
-  reasonCategory: 'abuse' | 'spam' | 'misinfo' | 'other';
+  @Column({ type: 'varchar', length: 64 })
+  type!: string;
 
-  @Column({ type: 'text', nullable: true })
-  reasonText?: string;
+  @Column({ type: 'jsonb', nullable: true })
+  data!: Record<string, any> | null;
 
-  @Column({ type: 'varchar', default: 'open' })
-  status: 'open' | 'reviewing' | 'resolved' | 'dismissed' | 'actioned';
+  @Index()
+  @Column({ type: 'varchar', length: 32, default: 'pending' })
+  status!: ReportStatus;
 
-  @Column({ type: 'text', nullable: true })
-  adminNote?: string;
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  adminNote!: string | null;
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
-  updatedAt: Date;
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }

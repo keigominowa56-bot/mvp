@@ -1,85 +1,97 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
-import { ScheduledPost } from '../../entities/scheduled-post.entity';
-import { Post } from '../posts/post.entity';
-import { User } from '../../entities/user.entity';
-import { NgWordsService } from '../moderation/ng-words.service';
+import { ScheduledPost } from 'src/entities/scheduled-post.entity';
+import { Post } from 'src/entities/post.entity';
+import { NgWordsService } from 'src/modules/moderation/ng-words.service';
+
+function toDate(d: string | Date): Date {
+  if (d instanceof Date) return d;
+  const parsed = new Date(d);
+  if (isNaN(parsed.getTime())) throw new Error('invalid date');
+  return parsed;
+}
 
 @Injectable()
 export class ScheduledPostsService {
+  private readonly logger = new Logger(ScheduledPostsService.name);
+
   constructor(
-    @InjectRepository(ScheduledPost) private readonly spRepo: Repository<ScheduledPost>,
-    @InjectRepository(Post) private readonly postRepo: Repository<Post>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(ScheduledPost) private readonly repo: Repository<ScheduledPost>,
+    @InjectRepository(Post) private readonly posts: Repository<Post>,
     private readonly ngWords: NgWordsService,
-  ) {
-    // Simple worker loop
-    setInterval(() => this.processDue().catch(console.error), 30000); // every 30s
-  }
+  ) {}
 
-  async schedule(actorId: string, data: { authorId?: string; title?: string; body: string; tags?: string[]; scheduledAt: string }) {
-    const actor = await this.userRepo.findOne({ where: { id: actorId } });
-    if (!actor || actor.role !== 'admin') throw new BadRequestException('admin only');
-    if (!data.body || !data.scheduledAt) throw new BadRequestException('body & scheduledAt required');
-    const ng = await this.ngWords.containsNg(data.body);
-    if (ng) throw new BadRequestException(`NG word detected: ${ng}`);
-
-    const authorId = data.authorId || actorId;
-    const scheduledAt = new Date(data.scheduledAt);
-    if (isNaN(scheduledAt.getTime())) throw new BadRequestException('invalid scheduledAt');
-
-    const sp = this.spRepo.create({
+  async schedule(authorId: string, body: { scheduledAt: string | Date; title: string; body: string; tags?: string[] }) {
+    const sp = this.repo.create({
       authorId,
-      title: data.title,
-      body: data.body,
-      tags: data.tags,
-      scheduledAt,
-      status: 'scheduled',
-    });
-    return this.spRepo.save(sp);
+      scheduledAt: toDate(body.scheduledAt),
+      title: body.title,
+      body: body.body,
+      tags: body.tags ?? null,
+      status: 'pending',
+      postedPostId: null,
+      failureReason: null,
+    } as any);
+    return this.repo.save(sp);
   }
 
   async list() {
-    return this.spRepo.find({ order: { scheduledAt: 'ASC' }, take: 200 });
-  }
-
-  async cancel(id: string, actorId: string) {
-    const actor = await this.userRepo.findOne({ where: { id: actorId } });
-    if (!actor || actor.role !== 'admin') throw new BadRequestException('admin only');
-    const sp = await this.spRepo.findOne({ where: { id } });
-    if (!sp) throw new BadRequestException('not found');
-    if (sp.status !== 'scheduled') throw new BadRequestException('cannot cancel');
-    sp.status = 'canceled';
-    return this.spRepo.save(sp);
-  }
-
-  async processDue() {
-    const now = new Date();
-    const due = await this.spRepo.find({
-      where: { status: 'scheduled', scheduledAt: LessThanOrEqual(now) },
-      take: 10,
+    return this.repo.find({
       order: { scheduledAt: 'ASC' },
+      take: 200,
     });
+  }
+
+  async cancel(id: string, authorId: string) {
+    const sp = await this.repo.findOne({ where: { id } });
+    if (!sp) throw new NotFoundException('scheduled post not found');
+    if (sp.authorId !== authorId) throw new ForbiddenException('not owner');
+    if (sp.status !== 'pending') throw new ForbiddenException('can cancel only pending');
+    sp.status = 'canceled';
+    await this.repo.save(sp);
+    return { ok: true };
+  }
+
+  async runDuePosts(now = new Date()) {
+    const due = await this.repo.find({
+      where: { scheduledAt: LessThanOrEqual(now), status: 'pending' } as any,
+      order: { scheduledAt: 'ASC' },
+      take: 100,
+    });
+
     for (const sp of due) {
       try {
         const ng = await this.ngWords.containsNg(sp.body);
-        if (ng) throw new Error('NG word at post time: ' + ng);
-        const p = this.postRepo.create({
-          authorId: sp.authorId,
-          body: sp.body,
+        if (ng) {
+          sp.status = 'rejected';
+          sp.failureReason = 'Contains NG words';
+          await this.repo.save(sp);
+          continue;
+        }
+
+        const postEntity = this.posts.create({
+          authorUserId: sp.authorId,
+          type: 'normal',
           title: sp.title,
-          tags: sp.tags as any,
-        } as Partial<Post>);
-        const saved = await this.postRepo.save(p);
-        sp.postedPostId = saved.id;
+          content: sp.body,
+          mediaIds: null,
+          regionId: null,
+        } as any);
+        const saved = await this.posts.save(postEntity);
+
+        sp.postedPostId = (saved as any).id;
         sp.status = 'posted';
-        await this.spRepo.save(sp);
+        sp.failureReason = null;
+        await this.repo.save(sp);
       } catch (e: any) {
-        sp.status = 'failed';
-        sp.failureReason = e.message;
-        await this.spRepo.save(sp);
+        sp.status = 'error';
+        sp.failureReason = e?.message ?? 'unknown error';
+        await this.repo.save(sp);
+        this.logger.error(`Failed to post scheduled ${sp.id}: ${sp.failureReason}`);
       }
     }
+
+    return { ok: true, processed: due.length };
   }
 }

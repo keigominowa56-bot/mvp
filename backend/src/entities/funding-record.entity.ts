@@ -1,27 +1,53 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Politician } from 'src/entities/politician.entity';
+import { Member } from 'src/entities/member.entity';
 
 @Entity('funding_records')
-@Index(['politicianId'])
-@Index(['politicianId', 'date'])
 export class FundingRecord {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column()
-  politicianId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  politicianId!: string;
 
+  @ManyToOne(() => Politician, (p) => p.id, { onDelete: 'CASCADE' })
+  politician!: Politician;
+
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  memberId!: string | null;
+
+  @ManyToOne(() => Member, (m) => m.id, { onDelete: 'SET NULL', nullable: true })
+  member!: Member | null;
+
+  // 金額
   @Column({ type: 'int' })
-  amount: number; // 円
+  amount!: number;
 
-  @Column({ type: 'varchar', nullable: true })
-  category?: string; // 例: 広告費など
+  // 区分（寄付、支出など）
+  @Column({ type: 'varchar', length: 64 })
+  category!: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  // 会計年度（必要なら）
+  @Index()
+  @Column({ type: 'int', nullable: true })
+  fiscalYear!: number | null;
 
-  @Column({ type: 'date' })
-  date: string; // YYYY-MM-DD
+  // 日付（費用発生日など）
+  @Index()
+  @Column({ type: 'date', nullable: true })
+  expenseDate!: Date | null;
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  // 備考
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  note!: string | null;
+
+  // 作成日時（PostgreSQL対応: datetimeではなくtimestamp with time zone）
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
+
+  // 更新日時
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }

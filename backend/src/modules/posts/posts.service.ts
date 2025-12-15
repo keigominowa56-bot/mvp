@@ -1,53 +1,58 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Post } from 'src/entities/post.entity';
-import { User } from 'src/entities/user.entity';
-import { UserRoleEnum } from 'src/enums/user-role.enum';
-import { PostType } from 'src/enums/post-type.enum';
 
 @Injectable()
 export class PostsService {
-  constructor(
-    @InjectRepository(Post) private readonly posts: Repository<Post>,
-    @InjectRepository(User) private readonly users: Repository<User>,
-  ) {}
+  constructor(@InjectRepository(Post) private readonly repo: Repository<Post>) {}
 
-  async create(authorUserId: string, dto: any) {
-    const author = await this.users.findOne({ where: { id: authorUserId } });
-    if (!author) throw new ForbiddenException('User not found');
-
-    const restricted = [PostType.ACTIVITY, PostType.PLEDGE, PostType.QUESTION];
-    if (restricted.includes(dto.type) && author.role !== UserRoleEnum.POLITICIAN && author.role !== UserRoleEnum.ADMIN) {
-      throw new ForbiddenException('Only politicians can create this type');
-    }
-
-    const post = this.posts.create({
-      authorUserId,
-      type: dto.type,
+  async create(userId: string, dto: { title: string; content: string; type: string }) {
+    const post = this.repo.create({
       title: dto.title,
       content: dto.content,
-      mediaIds: dto.mediaIds ?? null,
-      regionId: dto.regionId ?? null,
-    });
-    return this.posts.save(post);
+      type: dto.type,
+      authorUserId: userId, // リレーションオブジェクトではなく外部キー
+    } as any);
+    return this.repo.save(post);
   }
 
-  async list(query: { type?: string; region?: string; q?: string; page?: number; limit?: number }): Promise<Post[]> {
-    const qb = this.posts.createQueryBuilder('p')
-      .leftJoinAndSelect('p.author', 'author')
-      .orderBy('p.createdAt', 'DESC');
+  async list(query: {
+    type?: string;
+    authorUserId?: string;
+    search?: string;
+    limit?: number;
+    beforeId?: string;
+  }) {
+    let qb: SelectQueryBuilder<Post> = this.repo.createQueryBuilder('p');
 
-    if (query.type) qb.andWhere('p.type = :type', { type: query.type });
-    if (query.region) qb.andWhere('p.regionId = :regionId', { regionId: query.region });
-    if (query.q) qb.andWhere('(p.title ILIKE :q OR p.content ILIKE :q)', { q: `%${query.q}%` });
+    if (query.type) {
+      qb = qb.andWhere('p.type = :type', { type: query.type });
+    }
+    if (query.authorUserId) {
+      qb = qb.andWhere('p.authorUserId = :authorUserId', { authorUserId: query.authorUserId });
+    }
+    if (query.search) {
+      qb = qb.andWhere('(p.title LIKE :search OR p.content LIKE :search)', {
+        search: `%${query.search}%`,
+      });
+    }
+    if (query.beforeId) {
+      qb = qb.andWhere('p.id < :beforeId', { beforeId: query.beforeId });
+    }
 
-    const take = Math.min(parseInt(String(query.limit || '20'), 10), 100);
-    qb.take(take);
+    qb = qb.orderBy('p.createdAt', 'DESC');
+
+    if (query.limit && Number.isFinite(query.limit)) {
+      qb = qb.take(Math.max(1, Math.min(query.limit, 100)));
+    } else {
+      qb = qb.take(20);
+    }
+
     return qb.getMany();
   }
 
-  async findById(id: string): Promise<Post | null> {
-    return this.posts.findOne({ where: { id }, relations: ['author'] });
+  async findById(id: string) {
+    return this.repo.findOne({ where: { id } });
   }
 }

@@ -1,32 +1,34 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('policies')
-@Index(['politicianId'])
 export class Policy {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column()
-  politicianId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  politicianId!: string;
 
-  @Column({ type: 'varchar' })
-  title: string;
+  @Column({ type: 'varchar', length: 256 })
+  title!: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Column({ type: 'text' })
+  content!: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  category?: string;
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  category!: string | null;
 
-  @Column({ type: 'varchar', default: 'pending' })
-  status: 'pending' | 'in-progress' | 'achieved' | 'abandoned';
+  @Column({ type: 'varchar', length: 32, default: 'draft' })
+  status!: string;
 
-  @Column({ type: 'datetime', nullable: true })
-  publishedAt?: Date;
+  // 修正: Postgresでは 'datetime' 非対応。'timestamp with time zone' を使用
+  @Index()
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  publishedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
-  updatedAt: Date;
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }

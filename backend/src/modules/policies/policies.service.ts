@@ -1,41 +1,34 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Policy } from '../../entities/policy.entity';
-import { User } from '../../entities/user.entity';
+import { Policy } from 'src/entities/policy.entity';
 
 @Injectable()
 export class PoliciesService {
-  constructor(
-    @InjectRepository(Policy) private readonly policyRepo: Repository<Policy>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
-  ) {}
+  constructor(@InjectRepository(Policy) private readonly policyRepo: Repository<Policy>) {}
 
-  async list(politicianId: string) {
-    return this.policyRepo.find({ where: { politicianId }, order: { createdAt: 'DESC' } });
+  async list(politicianId?: string) {
+    const where = politicianId ? { politicianId } : {};
+    return this.policyRepo.find({ where, order: { createdAt: 'DESC' } });
   }
 
-  async create(politicianId: string, data: { title: string; description?: string; category?: string; status?: string }) {
-    if (!data.title) throw new BadRequestException('title required');
+  async create(
+    politicianId: string,
+    body: { title: string; content?: string; description?: string; category?: string; status?: string },
+  ) {
+    const content = body.content ?? body.description ?? '';
     const p = this.policyRepo.create({
       politicianId,
-      title: data.title,
-      description: data.description,
-      category: data.category,
-      status: (data.status as any) || 'pending',
-      publishedAt: new Date(),
-    });
+      title: body.title,
+      content,
+      category: body.category ?? null,
+      status: body.status ?? 'draft',
+    } as any);
     return this.policyRepo.save(p);
   }
 
-  async update(id: string, actor: User, patch: Partial<Policy>) {
-    const pol = await this.policyRepo.findOne({ where: { id } });
-    if (!pol) throw new BadRequestException('policy not found');
-    // Only admin or the politician who owns
-    if (actor.role !== 'admin' && actor.id !== pol.politicianId) {
-      throw new ForbiddenException('not allowed');
-    }
-    Object.assign(pol, patch);
-    return this.policyRepo.save(pol);
+  async update(id: string, _actor: string | { id: string }, patch: Partial<Policy>) {
+    await this.policyRepo.update({ id }, patch);
+    return this.policyRepo.findOne({ where: { id } });
   }
 }

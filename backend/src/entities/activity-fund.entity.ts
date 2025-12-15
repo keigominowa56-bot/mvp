@@ -1,31 +1,37 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Member } from './member.entity';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Member } from 'src/entities/member.entity';
 
 @Entity('activity_funds')
 export class ActivityFund {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column()
-  memberId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  memberId!: string;
 
   @ManyToOne(() => Member, (member) => member.activityFunds, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'memberId' })
-  member: Member;
+  member!: Member;
 
-  @Column({ nullable: true })
-  fiscalYear?: string;
+  @Column({ type: 'int' })
+  amount!: number;
 
-  // 変更: timestamptz → datetime
-  @Column({ type: 'datetime', nullable: true })
-  expenseDate?: Date;
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  note!: string | null;
 
-  @Column({ type: 'int', default: 0 })
-  amount: number;
+  // 追加: 会計年度（サービスが order に使用）
+  @Index()
+  @Column({ type: 'int', nullable: true })
+  fiscalYear!: number | null;
 
-  @Column({ type: 'text', nullable: true })
-  note?: string;
+  // 追加: 支出日（サービスが order に使用）
+  @Index()
+  @Column({ type: 'date', nullable: true })
+  expenseDate!: Date | null;
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

@@ -1,27 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule } from '@nestjs/config';
-
-import { User } from '../../entities/user.entity';
-import { AuthService } from './auth.service';
+import { User } from 'src/entities/user.entity';
+import { Politician } from 'src/entities/politician.entity';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { AuthService } from './auth.service';
 
 @Module({
-  imports: [
-    ConfigModule,
-    TypeOrmModule.forFeature([User]),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      // 全モジュールで同じ秘密鍵に統一
-      secret: process.env.JWT_SECRET || 'dev-secret',
-      signOptions: { expiresIn: '7d' },
-    }),
-  ],
+  imports: [TypeOrmModule.forFeature([User, Politician])],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [JwtModule, PassportModule],
+  providers: [AuthService],
 })
 export class AuthModule {}

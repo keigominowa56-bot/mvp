@@ -1,13 +1,10 @@
-// 重複 export を排除（宣言は1回、末尾の列挙も1回のみ）
-
-export type UserRole = 'user' | 'politician' | 'admin';
-
 export enum UserRoleEnum {
-  USER = 'user',
+  CITIZEN = 'citizen',
   POLITICIAN = 'politician',
   ADMIN = 'admin',
 }
 
-export const USER_ROLES = ['user', 'politician', 'admin'] as const;
+export const USER_ROLES = [UserRoleEnum.CITIZEN, UserRoleEnum.POLITICIAN, UserRoleEnum.ADMIN] as const;
 
-export { UserRoleEnum, USER_ROLES }
+// 型エイリアス（配列から導出）
+export type UserRole = (typeof USER_ROLES)[number];

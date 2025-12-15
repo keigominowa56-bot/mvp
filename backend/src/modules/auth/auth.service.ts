@@ -1,55 +1,49 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-import { JwtService } from '@nestjs/jwt';
-// 実体に合わせて後で修正します
-import { User } from '../../entities/user.entity';
+import { Repository } from 'typeorm';
+import { User } from 'src/entities/user.entity';
+import { Politician } from 'src/entities/politician.entity';
+import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
-    private readonly jwt: JwtService
+    @InjectRepository(Politician) private readonly politicians: Repository<Politician>,
   ) {}
 
-  async register(dto: { email: string; password: string; displayName?: string; role?: string }) {
-    if (!dto.email || !dto.password) throw new BadRequestException('email and password are required');
-    const existing = await this.users.findOne({ where: { email: dto.email } as FindOptionsWhere<User> });
-    if (existing) throw new BadRequestException('email already exists');
+  async adminSignup(email: string, password: string) {
+    const existing = await this.users.findOne({ where: { email } });
+    if (existing) throw new UnauthorizedException('email already registered');
+    const passwordHash = await bcrypt.hash(password, 10);
+    const u = this.users.create({ email, passwordHash, role: 'admin', status: 'active' } as any);
+    await this.users.save(u);
+    return { ok: true };
+  }
 
-    const hash = await bcrypt.hash(dto.password, 10);
-    // エンティティの実フィールドに合わせて保存
-    const user = this.users.create({
-      email: dto.email,
-      // 一旦 passwordHash を使用。user.entity.ts に合わせて後で修正します
-      passwordHash: hash,
-      displayName: dto.displayName ?? '',
-      role: (dto.role as any) ?? 'user',
+  async politicianSignup(input: { email: string; password: string; name: string; regionId?: string | null; partyId?: string | null }) {
+    const existing = await this.users.findOne({ where: { email: input.email } });
+    if (existing) throw new UnauthorizedException('email already registered');
+    const passwordHash = await bcrypt.hash(input.password, 10);
+    const u = this.users.create({ email: input.email, passwordHash, role: 'politician', status: 'active' } as any);
+    await this.users.save(u);
+    const p = this.politicians.create({
+      name: input.name,
+      regionId: input.regionId ?? null,
+      partyId: input.partyId ?? null,
     } as any);
-    const saved: any = await this.users.save(user as any);
-
-    const accessToken = await this.jwt.signAsync({ sub: saved.id, email: saved.email, role: saved.role });
-    return { accessToken, userId: saved.id };
+    await this.politicians.save(p);
+    return { ok: true };
   }
 
-  async login(email: string, password: string) {
-    const user: any = await this.users.findOne({ where: { email } as FindOptionsWhere<User> });
-    if (!user) throw new UnauthorizedException('invalid credentials');
-    const ok = await bcrypt.compare(password, user.passwordHash ?? user.password);
+  async login(email: string, password: string, expectedRole: 'admin' | 'politician') {
+    const u = await this.users.findOne({ where: { email } });
+    if (!u) throw new UnauthorizedException('invalid credentials');
+    const ok = await bcrypt.compare(password, u.passwordHash);
     if (!ok) throw new UnauthorizedException('invalid credentials');
-
-    const accessToken = await this.jwt.signAsync({ sub: user.id, email: user.email, role: user.role });
-    return { accessToken, userId: user.id };
-  }
-
-  async me(userId: string) {
-    const user: any = await this.users.findOne({ where: { id: userId } as FindOptionsWhere<User> });
-    if (!user) throw new NotFoundException('User not found');
-    return { id: user.id, email: user.email, displayName: user.displayName, role: user.role };
-  }
-
-  async validatePassword(raw: string, hash: string) {
-    return bcrypt.compare(raw, hash);
+    if (u.role !== expectedRole) throw new UnauthorizedException('invalid role');
+    const token = jwt.sign({ sub: u.id, role: u.role }, process.env.JWT_SECRET ?? 'dev-secret', { expiresIn: '7d' });
+    return { token };
   }
 }

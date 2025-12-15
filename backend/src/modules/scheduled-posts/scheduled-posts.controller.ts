@@ -1,18 +1,14 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Patch, Param } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, Param, Post, Delete, Request } from '@nestjs/common';
 import { ScheduledPostsService } from './scheduled-posts.service';
 
-@Controller('admin/scheduled-posts')
-@UseGuards(JwtAuthGuard)
+@Controller('scheduled-posts')
 export class ScheduledPostsController {
   constructor(private readonly svc: ScheduledPostsService) {}
 
   @Post()
-  async schedule(
-    @Body() body: { authorId?: string; title?: string; body: string; tags?: string[]; scheduledAt: string },
-    @Request() req: any,
-  ) {
-    return this.svc.schedule(req.user.sub, body);
+  async schedule(@Request() req: any, @Body() body: { scheduledAt: string | Date; title: string; body: string; tags?: string[] }) {
+    const authorId = req?.user?.sub ?? req?.user?.id;
+    return this.svc.schedule(authorId, body);
   }
 
   @Get()
@@ -20,8 +16,9 @@ export class ScheduledPostsController {
     return this.svc.list();
   }
 
-  @Patch(':id/cancel')
+  @Delete(':id')
   async cancel(@Param('id') id: string, @Request() req: any) {
-    return this.svc.cancel(id, req.user.sub);
+    const authorId = req?.user?.sub ?? req?.user?.id;
+    return this.svc.cancel(id, authorId);
   }
 }

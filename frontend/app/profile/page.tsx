@@ -1,28 +1,54 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { API_BASE } from '../../lib/api';
-import { getToken } from '../../lib/auth';
+import React from 'react';
 
-export default function ProfilePage() {
-  const [me, setMe] = useState<any>(null);
+// 認証/ユーザー取得のサンプル関数（実装に合わせて差し替えてください）
+async function getCurrentUser(): Promise<{
+  id: string;
+  name?: string | null;
+  nickname?: string | null;
+  region?: { id: string; name?: string | null } | null;
+  supportedParty?: { id: string; name?: string | null } | null;
+} | null> {
+  // 例: NextAuth or 自前のセッションからユーザーID取得 → API/DBからユーザー情報取得
+  // const session = await auth();
+  // if (!session?.user?.id) return null;
+  // const res = await fetch(`${process.env.API_BASE_URL}/users/${session.user.id}`, { cache: 'no-store' });
+  // if (!res.ok) return null;
+  // return await res.json();
 
-  useEffect(() => {
-    const token = getToken();
-    fetch(`${API_BASE}/auth/me`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
-      .then((r) => (r.status === 401 ? null : r.json()))
-      .then(setMe as any);
-  }, []);
+  // ダミー実装（必ずnull以外を返すわけではないので本番は上記に差し替え）
+  return null;
+}
 
-  if (!me) return <div>ログインしてください</div>;
-  const user = me.user;
+export default async function ProfilePage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    // 未ログイン or 取得失敗時の安全なUI
+    return (
+      <div className="bg-white border rounded p-4">
+        <h1 className="text-xl font-bold">プロフィール</h1>
+        <p className="text-red-600">ユーザー情報が取得できませんでした。ログインしてください。</p>
+        <div className="mt-2">
+          <a href="/login" className="text-blue-600 underline">
+            ログインページへ
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const name = user.name ?? '-';
+  const nickname = user.nickname ?? '-';
+  const regionName = user.region?.name ?? '-';
+  const partyName = user.supportedParty?.name ?? '-';
 
   return (
     <div className="bg-white border rounded p-4">
       <h1 className="text-xl font-bold">プロフィール</h1>
-      <p>名前: {user.name}</p>
-      <p>ニックネーム: {user.nickname}</p>
-      <p>地域: {user.region?.name ?? '-'}</p>
-      <p>支持政党: {user.supportedParty?.name ?? '-'}</p>
+      <p>名前: {name}</p>
+      <p>ニックネーム: {nickname}</p>
+      <p>地域: {regionName}</p>
+      <p>支持政党: {partyName}</p>
     </div>
   );
 }

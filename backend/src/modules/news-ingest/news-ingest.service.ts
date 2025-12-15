@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
 import { Post } from 'src/entities/post.entity';
 import { User } from 'src/entities/user.entity';
 import { PostType } from 'src/enums/post-type.enum';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { createHash } from 'crypto';
 
 @Injectable()
@@ -16,12 +16,9 @@ export class NewsIngestService {
     @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
-  @Cron(CronExpression.EVERY_15_MINUTES)
+  // EVERY_15_MINUTES から EVERY_5_MINUTES に修正
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async pollRss() {
-    await this.pullAndCreate();
-  }
-
-  async onModuleInit() {
     await this.pullAndCreate();
   }
 
@@ -90,7 +87,7 @@ export class NewsIngestService {
         content,
         mediaIds: null,
         regionId: null,
-      });
+      } as any);
       await this.posts.save(post);
       hashes.add(h);
       created++;

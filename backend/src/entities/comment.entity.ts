@@ -6,34 +6,34 @@ import { CommentReaction } from './comment-reaction.entity';
 @Entity('comments')
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Index()
-  @Column()
-  postId: string;
+  @Column({ type: 'uuid' })
+  postId!: string;
 
   @ManyToOne(() => Post, { onDelete: 'CASCADE' })
-  post: Post;
+  post!: Post;
 
   @Index()
-  @Column()
-  authorUserId: string;
+  @Column({ type: 'uuid' })
+  authorUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  author: User;
+  author!: User;
 
   @Column({ type: 'text' })
-  content: string;
+  content!: string;
 
-  @Column({ type: 'json', nullable: true })
-  mediaIds: string[] | null;
+  @Column({ type: 'jsonb', nullable: true })
+  mediaIds!: string[] | null;
 
-  @Column({ type: 'json', nullable: true })
-  mentions: string[] | null;
+  @Column({ type: 'jsonb', nullable: true })
+  mentions!: string[] | null;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
 
   @OneToMany(() => CommentReaction, (r) => r.comment)
-  reactions: CommentReaction[];
+  reactions!: CommentReaction[];
 }

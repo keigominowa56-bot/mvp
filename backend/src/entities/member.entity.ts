@@ -1,47 +1,66 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
+  CreateDateColumn,
+  Entity,
+  Index,
   ManyToOne,
   OneToMany,
-  CreateDateColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
-import { User } from './user.entity';
-import { ActivityLog } from '../modules/activity-logs/activity-log.entity';
-import { ActivityFund } from './activity-fund.entity';
+import { User } from 'src/entities/user.entity';
+import { ActivityFund } from 'src/entities/activity-fund.entity';
+import { ActivityLog } from 'src/entities/activity-log.entity';
 
 @Entity('members')
 export class Member {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column()
-  name: string;
+  // UsersService/MembersService が参照する基本プロフィール
+  @Index()
+  @Column({ type: 'varchar', length: 128 })
+  name!: string;
 
   @Index()
-  @Column({ nullable: true })
-  email?: string;
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  email!: string | null;
 
-  @Column({ nullable: true })
-  twitterHandle?: string;
+  @Index()
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  twitterHandle!: string | null;
 
-  @Column({ nullable: true })
-  lastTwitterFetch?: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  lastTwitterFetch!: Date | null;
 
-  @ManyToOne(() => User, (user) => user.members, { nullable: true, onDelete: 'SET NULL' })
-  user?: User;
+  // 所属や権限など必要に応じて
+  @Index()
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  role!: string | null;
 
-  @OneToMany(() => ActivityLog, (log) => log.member)
-  activityLogs: ActivityLog[];
+  @Index()
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  groupId!: string | null;
 
+  // ユーザーとの関連
+  @ManyToOne(() => User, (user) => user.members, { onDelete: 'CASCADE' })
+  user!: User;
+
+  @Index()
+  @Column({ type: 'uuid' })
+  userId!: string;
+
+  // 活動資金（ActivityFund）との関連
   @OneToMany(() => ActivityFund, (fund) => fund.member)
-  activityFunds: ActivityFund[];
+  activityFunds!: ActivityFund[];
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  // 活動ログ（ActivityLog）との関連
+  @OneToMany(() => ActivityLog, (log) => log.member)
+  activityLogs!: ActivityLog[];
 
-  @UpdateDateColumn({ type: 'datetime' })
-  updatedAt: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

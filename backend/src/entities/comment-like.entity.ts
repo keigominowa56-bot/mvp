@@ -4,14 +4,17 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 
 @Index(['commentId', 'userId'], { unique: true })
 export class CommentLike {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column()
-  commentId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  commentId!: string;
 
-  @Column()
-  userId: string;
+  @Index()
+  @Column({ type: 'uuid' })
+  userId!: string;
 
-  @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  // Postgres対応: datetime ではなく timestamp with time zone を使用
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt!: Date;
 }
