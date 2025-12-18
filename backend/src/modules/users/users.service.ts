@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, UserStatus } from 'src/entities/user.entity';
+import { Member } from 'src/entities/member.entity'; // Memberエンティティをimport
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(Member) private readonly members: Repository<Member>, // Memberリポジトリを注入
+  ) {}
 
-  // findOne -> findById
   async findById(id: string): Promise<User> {
     const u = await this.users.findOne({ where: { id } as FindOptionsWhere<User> });
     if (!u) throw new NotFoundException('User not found');
@@ -19,7 +22,7 @@ export class UsersService {
     return this.users.find();
   }
 
-  // createUser（登録初期値は必ず 'pending'/未承認）
+  // createUser：usersとmembersに両方登録
   async createUser(body: {
     email: string;
     password: string;
@@ -31,6 +34,8 @@ export class UsersService {
     status?: UserStatus;
   }): Promise<User> {
     const passwordHash = await bcrypt.hash(body.password, 10);
+
+    // 1. usersに登録
     const u = this.users.create({
       email: body.email,
       passwordHash,
@@ -43,6 +48,18 @@ export class UsersService {
       emailVerified: false,
       phoneVerified: false,
     });
-    return await this.users.save(u);
+    const user = await this.users.save(u);
+
+    // 2. membersにも登録（userId: users.id）
+    const m = this.members.create({
+      name: body.name ?? '',
+      email: body.email,
+      role: body.role ?? 'citizen',
+      user: user,
+      userId: user.id,
+    });
+    await this.members.save(m);
+
+    return user;
   }
 }
