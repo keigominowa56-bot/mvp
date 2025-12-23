@@ -68,16 +68,13 @@ mvp/
 │   │   ├── config/          # 設定ファイル
 │   │   └── main.ts          # アプリケーションエントリーポイント
 │   ├── package.json
-│   └── env.example
-├── frontend/                # Next.js フロントエンド
-│   ├── app/                 # App Router
-│   ├── components/          # React コンポーネント
-│   ├── contexts/            # React Context
-│   ├── lib/                 # ユーティリティ
-│   ├── package.json
-│   └── env.example
+│   └── jest.config.ts
+├── .env.example             # 環境変数の設定例（バックエンド用）
+├── docker/                  # Docker 設定
 └── README.md
 ```
+
+**注**: フロントエンドは別途実装予定です。
 
 ## 🚀 セットアップ手順
 
@@ -93,14 +90,17 @@ git clone <repository-url>
 cd mvp
 ```
 
-### 2. バックエンドのセットアップ
+### 2. 環境変数の設定
+```bash
+# ルートディレクトリから環境変数ファイルをコピー
+cp .env.example backend/.env
+# .env ファイルを編集して必要な値を設定
+```
+
+### 3. バックエンドのセットアップ
 ```bash
 cd backend
 npm install
-
-# 環境変数の設定
-cp env.example .env
-# .env ファイルを編集して必要な値を設定
 
 # データベースの作成
 mysql -u root -p
@@ -110,23 +110,11 @@ CREATE DATABASE transparency_platform;
 npm run start:dev
 ```
 
-### 3. フロントエンドのセットアップ
-```bash
-cd frontend
-npm install
-
-# 環境変数の設定
-cp env.example .env.local
-# .env.local ファイルを編集して必要な値を設定
-
-# アプリケーションの起動
-npm run dev
-```
-
 ### 4. アクセス
-- フロントエンド: http://localhost:3000
 - バックエンドAPI: http://localhost:3001
 - API ドキュメント: http://localhost:3001/api/docs
+
+**注**: フロントエンドは別途実装予定です。
 
 ## 🔧 環境変数の設定
 
@@ -162,19 +150,7 @@ PORT=3001
 FRONTEND_URL=http://localhost:3000
 ```
 
-### フロントエンド (.env.local)
-```env
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
-
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-```
+**注**: すべての環境変数の詳細は、リポジトリルートの `.env.example` ファイルを参照してください。
 
 ## 📊 データベーススキーマ
 
@@ -244,12 +220,9 @@ npm run test
 cd backend
 docker build -t transparency-backend .
 docker run -p 3001:3001 transparency-backend
-
-# フロントエンド
-cd frontend
-docker build -t transparency-frontend .
-docker run -p 3000:3000 transparency-frontend
 ```
+
+**注**: バックエンドのエントリーポイントは `dist/main.js` (NestJS標準) です。
 
 ### 本番環境での推奨設定
 - **データベース**: MySQL 8.0+ (本番用)
