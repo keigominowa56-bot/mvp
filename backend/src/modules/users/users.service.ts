@@ -22,6 +22,38 @@ export class UsersService {
     return this.users.find();
   }
 
+  async updateProfile(userId: string, dto: {
+    name?: string;
+    username?: string;
+    profileImageUrl?: string;
+    supportedPartyId?: string;
+  }): Promise<User> {
+    const user = await this.findById(userId);
+    
+    // ユーザー名の重複チェック
+    if (dto.username && dto.username !== user.username) {
+      const existing = await this.users.findOne({ where: { username: dto.username } });
+      if (existing) {
+        throw new Error('このユーザーIDは既に使用されています');
+      }
+    }
+    
+    // 名前の重複チェック（名前は一意である必要がある）
+    if (dto.name && dto.name !== user.name) {
+      const existing = await this.users.findOne({ where: { name: dto.name } });
+      if (existing) {
+        throw new Error('この名前は既に使用されています');
+      }
+    }
+    
+    if (dto.name !== undefined) user.name = dto.name;
+    if (dto.username !== undefined) user.username = dto.username;
+    if (dto.profileImageUrl !== undefined) user.profileImageUrl = dto.profileImageUrl;
+    if (dto.supportedPartyId !== undefined) user.supportedPartyId = dto.supportedPartyId;
+    
+    return this.users.save(user);
+  }
+
   // createUser：usersとmembersに両方登録
   async createUser(body: {
     email: string;

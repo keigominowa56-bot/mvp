@@ -23,8 +23,9 @@ export class AuthService {
     const user =
       (await this.users.findOne({ where: { email: id } })) ??
       (await this.users.findOne({ where: { phoneNumber: id } })); // phone -> phoneNumber に修正
-    if (!user) throw new UnauthorizedException('User not found');
-    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!user || !user.passwordHash) throw new UnauthorizedException('User not found');
+    const passwordHash = user.passwordHash; // 型ナローイングのため変数に代入
+    const ok = await bcrypt.compare(password, passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
     return user;
   }

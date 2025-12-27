@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { LogOut } from 'lucide-react'; 
 import toast from 'react-hot-toast'; // 💡 トーストをインポート
 

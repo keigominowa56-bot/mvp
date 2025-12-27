@@ -1,7 +1,9 @@
-import { Body, Controller, Post, Request } from '@nestjs/common';
+import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ReportsService } from './reports.service';
 
-@Controller('reports')
+@Controller('api/reports')
+@UseGuards(AuthGuard('jwt'))
 export class ReportsController {
   constructor(private readonly svc: ReportsService) {}
 
@@ -19,6 +21,9 @@ export class ReportsController {
     },
   ) {
     const reporterId = req?.user?.sub ?? req?.user?.id;
+    if (!reporterId) {
+      throw new Error('認証が必要です');
+    }
     return this.svc.create({
       reporterId,
       targetType: body.targetType,

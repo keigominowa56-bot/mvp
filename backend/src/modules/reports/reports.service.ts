@@ -63,6 +63,8 @@ export class ReportsService {
       targetType: data.targetType,
       targetId: data.targetId,
       type: data.type,
+      reasonCategory: data.reasonCategory || null,
+      reasonText: data.reasonText || null,
       data: composedDetails,
       status: 'pending',
       adminNote: null,
@@ -86,7 +88,20 @@ export class ReportsService {
     if (ns) where.status = ns;
     if (nt) where.targetType = nt;
     const take = params.limit && Number.isFinite(params.limit) ? Math.max(1, Math.min(params.limit, 200)) : 100;
-    return this.repo.find({ where, order: { createdAt: 'DESC' }, take });
+    const reports = await this.repo.find({ where, order: { createdAt: 'DESC' }, take });
+    
+    // 通報者名を取得
+    const reportsWithNames = await Promise.all(
+      reports.map(async (report) => {
+        const reporter = await this.userRepo.findOne({ where: { id: report.reporterId } });
+        return {
+          ...report,
+          reporterName: reporter?.name || null,
+        };
+      })
+    );
+    
+    return reportsWithNames;
   }
 
   async action(id: string, action: 'ban-user' | 'hide-post' | 'hide-comment') {

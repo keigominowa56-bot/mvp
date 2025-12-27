@@ -24,9 +24,9 @@ export class AuditLog {
   @Column({ type: 'varchar', length: 512, nullable: true })
   message!: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   meta!: Record<string, any> | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 }

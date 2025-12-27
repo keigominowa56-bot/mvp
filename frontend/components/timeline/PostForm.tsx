@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Post } from '@/types/data';
-import { createPost } from '@/utils/fakeApi';
+import { Post } from '../../types/data';
+import { createPost } from '../../utils/fakeApi';
 
 interface PostFormProps {
     onPostCreated: (post: Post) => void;

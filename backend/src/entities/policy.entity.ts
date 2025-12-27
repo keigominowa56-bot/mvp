@@ -23,12 +23,12 @@ export class Policy {
 
   // 修正: Postgresでは 'datetime' 非対応。'timestamp with time zone' を使用
   @Index()
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   publishedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

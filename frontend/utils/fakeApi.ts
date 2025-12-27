@@ -1,6 +1,6 @@
 // frontend/utils/fakeApi.ts
 
-import { Post } from '@/types/data';
+import { Post } from '../types/data';
 
 // ----------------------------------------------------
 // 1. サンプルデータに投票数と投票状態を追加
@@ -174,4 +174,4 @@ export async function toggleVote(postId: string, newStatus: 'upvote' | 'downvote
  * 投稿型に新しいフィールドが追加されたため、Post型も再定義する必要がある
  * 実際には '@/types/data'で定義されているが、ここではローカルで再定義する
  */
-export type { Post } from '@/types/data';
+export type { Post } from '../types/data';

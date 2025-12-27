@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -21,6 +22,7 @@ export class Post {
   authorUserId!: string | null;
 
   @ManyToOne(() => User, (user) => user.posts)
+  @JoinColumn({ name: 'authorUserId', referencedColumnName: 'id' })
   author!: User;
 
   @OneToMany(() => Vote, (vote) => vote.post)
@@ -38,12 +40,21 @@ export class Post {
   @Column({ type: 'varchar', length: 64, nullable: true })
   regionId!: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   mediaIds!: string[] | null;
+
+  @Column({ type: 'text', nullable: true })
+  imageUrl!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  videoUrl!: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deletedAt!: Date | null;
 }

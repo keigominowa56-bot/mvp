@@ -1,61 +1,101 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { API_BASE } from '../../../lib/api';
-import { getToken } from '../../../lib/auth';
+import { useEffect, useState, use } from 'react';
+import { API_BASE, apiFetchWithAuth, unwrap, votePost, fetchComments, createComment } from '../../../lib/api';
 
-export default function PostDetailPage({ params }: { params: { id: string } }) {
+export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [mediaIds, setMediaIds] = useState<string[]>([]);
-  const token = typeof window !== 'undefined' ? getToken() : null;
 
   useEffect(() => {
-    fetch(`${API_BASE}/posts/${params.id}`).then(r => r.json()).then(setPost);
-    fetch(`${API_BASE}/posts/${params.id}/comments`).then(r => r.json()).then(setComments);
-  }, [params.id]);
+    // 投稿詳細を取得
+    apiFetchWithAuth(`/api/posts/${resolvedParams.id}`, { method: 'GET' })
+      .then(res => unwrap(res))
+      .then(data => {
+        console.log('[PostDetail] 投稿詳細取得成功:', data);
+        setPost(data);
+      })
+      .catch(err => {
+        console.error('[PostDetail] 投稿詳細取得失敗:', err);
+      });
+    
+    // コメント一覧を取得
+    fetchComments(resolvedParams.id)
+      .then(data => {
+        console.log('[PostDetail] コメント一覧取得成功:', data);
+        setComments(data);
+      })
+      .catch(err => {
+        console.error('[PostDetail] コメント一覧取得失敗:', err);
+      });
+  }, [resolvedParams.id]);
 
   async function onVote(choice: 'agree' | 'disagree') {
-    if (!token) return alert('ログインしてください');
-    const res = await fetch(`${API_BASE}/posts/${params.id}/votes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ choice }),
-    });
-    if (!res.ok) return alert('投票失敗');
-    alert('投票しました');
+    console.log('[PostDetail] 投票開始 - postId:', resolvedParams.id, 'choice:', choice);
+    try {
+      await votePost(resolvedParams.id, choice);
+      console.log('[PostDetail] 投票成功');
+      alert('投票しました');
+      // ページをリロードして最新の状態を取得
+      window.location.reload();
+    } catch (err: any) {
+      console.error('[PostDetail] 投票失敗:', err);
+      alert(err.message || '投票失敗');
+    }
   }
 
   async function uploadMedia() {
-    if (!token || !file) return;
+    if (!file) return;
+    console.log('[PostDetail] メディアアップロード開始');
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!authToken) {
+      alert('ログインが必要です');
+      return;
+    }
     const form = new FormData();
     form.append('file', file);
     form.append('category', 'comment');
-    const res = await fetch(`${API_BASE}/media/upload`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-    });
-    if (!res.ok) return alert('アップロード失敗');
-    const data = await res.json();
-    setMediaIds((prev) => [...prev, data.mediaId]);
-    alert('添付しました');
+    try {
+      const res = await fetch(`${API_BASE}/api/media/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: form,
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        console.error('[PostDetail] メディアアップロード失敗:', error);
+        alert(error.message || 'アップロード失敗');
+        return;
+      }
+      const data = await res.json();
+      console.log('[PostDetail] メディアアップロード成功:', data);
+      setMediaIds((prev) => [...prev, data.mediaId]);
+      alert('添付しました');
+    } catch (err) {
+      console.error('[PostDetail] メディアアップロードエラー:', err);
+      alert('アップロードに失敗しました');
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return alert('ログインしてください');
-    const res = await fetch(`${API_BASE}/posts/${params.id}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ content: text, mediaIds }),
-    });
-    if (!res.ok) return alert('コメント失敗');
-    setText('');
-    setMediaIds([]);
-    const updated = await fetch(`${API_BASE}/posts/${params.id}/comments`).then(r => r.json());
-    setComments(updated);
+    console.log('[PostDetail] コメント送信開始 - postId:', resolvedParams.id, 'text:', text);
+    try {
+      await createComment(resolvedParams.id, { text, mediaIds });
+      console.log('[PostDetail] コメント送信成功');
+      setText('');
+      setMediaIds([]);
+      // コメント一覧を再取得
+      const updated = await fetchComments(resolvedParams.id);
+      console.log('[PostDetail] コメント一覧再取得成功:', updated);
+      setComments(updated);
+    } catch (err: any) {
+      console.error('[PostDetail] コメント送信失敗:', err);
+      alert(err.message || 'コメント送信に失敗しました');
+    }
   }
 
   if (!post) return <div>読み込み中…</div>;

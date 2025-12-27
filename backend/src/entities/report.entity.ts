@@ -23,7 +23,13 @@ export class Report {
   @Column({ type: 'varchar', length: 64 })
   type!: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  reasonCategory!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  reasonText!: string | null;
+
+  @Column({ type: 'json', nullable: true })
   data!: Record<string, any> | null;
 
   @Index()
@@ -33,9 +39,9 @@ export class Report {
   @Column({ type: 'varchar', length: 512, nullable: true })
   adminNote!: string | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

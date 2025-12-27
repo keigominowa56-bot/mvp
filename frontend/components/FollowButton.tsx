@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { followUser, unfollowUser, fetchFollowedUserIds } from '../lib/api.follows-snippet';
+import { followUser, unfollowUser, fetchFollowedUserIds } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function FollowButton({ userId }: { userId: string }) {
@@ -37,7 +37,7 @@ export default function FollowButton({ userId }: { userId: string }) {
         setFollowed(true);
       }
     } catch (e: any) {
-      alert('操作失敗: ' + (e?.response?.data?.message ?? e?.message ?? 'unknown'));
+      alert('操作失敗: ' + (e?.message ?? 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -47,11 +47,11 @@ export default function FollowButton({ userId }: { userId: string }) {
     <button
       onClick={toggle}
       disabled={loading}
-      className={`text-xs px-2 py-1 rounded border ${
-        followed ? 'bg-slate-800 text-white' : 'bg-white'
+      className={`px-4 py-2 rounded font-semibold ${
+        followed ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-blue-600 text-white hover:bg-blue-700'
       } disabled:opacity-50`}
     >
-      {loading ? '処理中...' : followed ? 'フォロー解除' : 'フォロー'}
+      {loading ? '処理中...' : followed ? '応援解除' : '応援する'}
     </button>
   );
 }

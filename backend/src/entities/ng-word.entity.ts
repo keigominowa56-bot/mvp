@@ -16,9 +16,9 @@ export class NgWord {
   active!: boolean;
 
   // Postgres対応: datetime -> timestamp with time zone
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

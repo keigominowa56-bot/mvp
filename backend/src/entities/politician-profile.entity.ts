@@ -33,12 +33,12 @@ export class PoliticianProfile {
   @Column({ type: 'text', nullable: true })
   biography!: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   extra!: Record<string, any> | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

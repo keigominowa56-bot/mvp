@@ -2,7 +2,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -18,16 +17,23 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Index({ unique: true })
   @Column({ type: 'varchar', length: 256, unique: true })
   email!: string;
 
   @Column({ type: 'varchar', length: 128, nullable: true })
   name!: string | null;
 
-  @Index({ unique: true })
   @Column({ type: 'varchar', length: 128, unique: true, nullable: true })
   nickname!: string | null;
+
+  @Column({ type: 'varchar', length: 32, unique: true, nullable: true })
+  username!: string | null; // ユーザーID（@username形式）
+
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  profileImageUrl!: string | null; // プロフィール画像URL
+
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  supportedPartyId!: string | null; // 支持政党ID
 
   @Column({ type: 'varchar', length: 32, nullable: true })
   phoneNumber!: string | null;
@@ -35,8 +41,14 @@ export class User {
   @Column({ type: 'varchar', length: 32, nullable: true })
   ageGroup!: string | null;
 
-  @Column({ type: 'varchar', length: 256 })
-  passwordHash!: string;
+  @Column({ type: 'date', nullable: true })
+  birthDate!: Date | null; // 生年月日
+
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  passwordHash!: string | null;
+
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  firebaseUid!: string | null;
 
   @Column({ type: 'boolean', default: false })
   emailVerified!: boolean;
@@ -56,6 +68,9 @@ export class User {
   @Column({ type: 'varchar', length: 32, default: 'citizen' })
   role!: 'admin' | 'politician' | 'citizen';
 
+  @Column({ type: 'boolean', default: false })
+  allowedEngagement!: boolean; // 投稿分析機能の使用許可
+
   @Column({ type: 'varchar', length: 64, nullable: true })
   addressPref!: string | null;
 
@@ -71,9 +86,9 @@ export class User {
   @OneToMany(() => Vote, (vote) => vote.user)
   votes!: Vote[];
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

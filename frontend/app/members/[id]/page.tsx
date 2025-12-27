@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import apiClient from '@/lib/api';
+import apiClient from '../../../lib/api';
 import { MapPin, Users, Briefcase, Link as LinkIcon, Twitter, Loader2, BookOpen, Clock, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 

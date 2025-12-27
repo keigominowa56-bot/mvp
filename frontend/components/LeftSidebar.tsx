@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { API_BASE } from '../lib/api';
+import { apiFetchWithAuth, unwrap, getMe } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 type PoliticianSummary = {
   id: string;
-  user?: { name?: string };
-  party?: { name?: string };
+  name?: string;
+  party?: string;
+  district?: string;
 };
 
 type FollowersAgg = {
@@ -15,30 +17,69 @@ type FollowersAgg = {
 };
 
 export function LeftSidebar() {
+  const { user, isPolitician: authIsPolitician } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
-  const [isPolitician, setIsPolitician] = useState(false);
   const [profile, setProfile] = useState<PoliticianSummary | null>(null);
   const [followers, setFollowers] = useState<FollowersAgg | null>(null);
 
   useEffect(() => {
-    // Minimal check (replace with auth/me in real)
-    // Fetch politician self profile if available
-    (async () => {
-      try {
-        // Placeholder: assume current user has politician profile at /politicians/me
-        const res = await fetch(`${API_BASE}/politicians/me`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setProfile(data);
-          setIsPolitician(true);
-          const aggRes = await fetch(`${API_BASE}/analytics/my/followers/demographics`, { credentials: 'include' });
-          if (aggRes.ok) setFollowers(await aggRes.json());
+    // ユーザー情報を取得（AuthContextから）
+    if (user && authIsPolitician) {
+      // 政治家の場合は拡張プロフィール情報を取得
+      (async () => {
+        try {
+          const res = await apiFetchWithAuth('/api/politician/profile', { method: 'GET' });
+          if (res.ok) {
+            const data = await unwrap<any>(res);
+            setProfile({
+              id: user.id,
+              name: data.name || user.name,
+              party: data.party,
+              district: data.district,
+            });
+          } else if (res.status === 404) {
+            // プロフィールがまだ作成されていない場合は、ユーザー情報のみを使用
+            setProfile({
+              id: user.id,
+              name: user.name,
+              party: undefined,
+              district: undefined,
+            });
+          }
+        } catch (err) {
+          console.error('[LeftSidebar] プロフィール取得エラー:', err);
+          // エラー時はユーザー情報のみを使用
+          setProfile({
+            id: user.id,
+            name: user.name,
+            party: undefined,
+            district: undefined,
+          });
         }
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, []);
+      })();
+      
+      // フォロワー数を取得（オプション）
+      (async () => {
+        try {
+          const res = await apiFetchWithAuth(`/api/follows/${user.id}/count`, { method: 'GET' });
+          if (res.ok) {
+            const data = await unwrap<{ count: number }>(res);
+            setFollowers({ total: data.count || 0 });
+          }
+        } catch {
+          // エラーは無視
+        }
+      })();
+    } else if (user) {
+      // 一般ユーザーの場合は、ユーザー情報のみを使用
+      setProfile({
+        id: user.id,
+        name: user.name,
+        party: undefined,
+        district: undefined,
+      });
+    }
+  }, [user, authIsPolitician]);
 
   return (
     <aside className={`bg-white border rounded p-3 ${navOpen ? '' : 'hidden md:block'}`} aria-label="メインナビ">
@@ -50,11 +91,18 @@ export function LeftSidebar() {
         メニュー
       </button>
 
-      {isPolitician && profile && (
+      {profile && (
         <div className="mb-3">
-          <div className="font-semibold">{profile.user?.name ?? '議員'}</div>
-          <div className="text-sm text-gray-600">{profile.party?.name ?? '無所属'}</div>
-          <div className="text-xs text-gray-500">フォロワー: {followers?.total ?? 0}</div>
+          <div className="font-semibold">{profile.name || 'ユーザー'}</div>
+          {authIsPolitician && (
+            <>
+              <div className="text-sm text-gray-600">{profile.party || '無所属'}</div>
+              {profile.district && (
+                <div className="text-xs text-gray-500">{profile.district}</div>
+              )}
+              <div className="text-xs text-gray-500">フォロワー: {followers?.total ?? 0}</div>
+            </>
+          )}
         </div>
       )}
 

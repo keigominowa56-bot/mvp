@@ -3,9 +3,9 @@
 'use client';
 
 import React, { useState } from 'react'; 
-import { Post } from '@/types/data'; 
+import { Post } from '../../types/data'; 
 import { MessageCircle, MoreVertical, Loader2 } from 'lucide-react'; 
-import { toggleVote } from '@/utils/fakeApi'; 
+import { toggleVote } from '../../utils/fakeApi'; 
 import { toast } from 'react-hot-toast';
 
 type VoteType = 'upvote' | 'downvote' | 'none';

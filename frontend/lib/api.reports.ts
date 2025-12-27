@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 export type Report = {
   id: number;
@@ -13,7 +13,7 @@ export type Report = {
 
 export async function createReport(targetType: string, targetId: number, reason: string) {
   try {
-    const res = await fetch(`${API_BASE}/reports`, {
+    const res = await fetch(`${API_BASE}/api/reports`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetType, targetId, reason })
@@ -35,7 +35,7 @@ export async function createReport(targetType: string, targetId: number, reason:
 // 管理者一覧
 export async function fetchAdminReports(): Promise<Report[]> {
   try {
-    const res = await fetch(`${API_BASE}/reports/admin`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}/api/reports/admin`, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error(`Failed to fetch reports: ${res.status}`);
     }
@@ -49,7 +49,7 @@ export async function fetchAdminReports(): Promise<Report[]> {
 // 管理者アクション (hide | ignore など)
 export async function adminReportAction(id: number, action: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/reports/admin/${id}/${action}`, {
+    const res = await fetch(`${API_BASE}/api/reports/admin/${id}/${action}`, {
       method: 'POST'
     });
     return res.ok;

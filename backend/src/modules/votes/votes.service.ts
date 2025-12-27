@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vote } from '../../entities/vote.entity';
@@ -16,10 +16,15 @@ export class VotesService {
     const post = await this.posts.findOne({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
 
-    // 1ユーザー1回（Unique制約で担保し、サービス層で409返す）
+    // 既存の投票を確認
     const existing = await this.votes.findOne({ where: { postId, voterUserId } });
-    if (existing) throw new ConflictException('Already voted');
+    if (existing) {
+      // 既に投票済みの場合は、選択を更新
+      existing.choice = dto.choice;
+      return this.votes.save(existing);
+    }
 
+    // 新しい投票を作成
     const vote = this.votes.create({ postId, voterUserId, choice: dto.choice });
     return this.votes.save(vote);
   }

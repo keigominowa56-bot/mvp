@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateCommentDto {
   @IsString()
@@ -12,4 +12,8 @@ export class CreateCommentDto {
   @IsOptional()
   @IsArray()
   mentions?: string[]; // nickname の配列（サーバー側でユーザーIDに解決）
+
+  @IsOptional()
+  @IsUUID()
+  parentId?: string | null; // 親コメントのID
 }

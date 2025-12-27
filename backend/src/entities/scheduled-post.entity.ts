@@ -38,7 +38,7 @@ export class ScheduledPost {
 
   // 投稿日時（PostgreSQLでは datetime ではなく timestamp 系を使用）
   @Index()
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamp' })
   scheduledAt!: Date;
 
   // 投稿内容関連
@@ -48,7 +48,7 @@ export class ScheduledPost {
   @Column({ type: 'text' })
   body!: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   tags!: string[] | null;
 
   // 投稿後の状態管理
@@ -62,9 +62,9 @@ export class ScheduledPost {
   @Column({ type: 'varchar', length: 512, nullable: true })
   failureReason!: string | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

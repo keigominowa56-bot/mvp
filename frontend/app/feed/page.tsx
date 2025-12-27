@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   fetchFeed,
   votePost,
   Post,
 } from '../../lib/api';
-import CommentsSection from '../../components/CommentsSection';
 import ReportButton from '../../components/ReportButton';
+import FollowButton from '../../components/FollowButton';
 import { useSearchParams } from 'next/navigation';
 
 type FeedFilters = {
@@ -36,6 +37,19 @@ export default function FeedPage() {
     setError(null);
     try {
       const data = await fetchFeed(filters);
+      // デバッグ: author情報を確認
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Feed] Loaded posts:', data.length);
+        data.forEach((p: Post) => {
+          console.log(`[Feed] Post ${p.id}:`, {
+            authorId: p.authorUserId,
+            authorName: p.author?.name,
+            authorUsername: p.author?.username,
+            authorRole: (p.author as any)?.role,
+            hasAuthor: !!p.author,
+          });
+        });
+      }
       setPosts(data);
     } catch (e: any) {
       setError(e?.message || 'Failed to load feed');
@@ -52,8 +66,8 @@ export default function FeedPage() {
   async function onVote(postId: string, choice: 'agree' | 'disagree') {
     try {
       await votePost(postId, choice);
-      loadFeed(filters);
-      alert('投票しました');
+      // 投票後、フィードを再読み込みして数字を更新
+      await loadFeed(filters);
     } catch (e: any) {
       alert(e?.message || '投票に失敗しました');
     }
@@ -66,16 +80,89 @@ export default function FeedPage() {
 
       {!loading && !error && posts.map((p) => (
         <article key={p.id} className="bg-white border rounded p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleString()}</div>
-              <h2 className="text-lg font-semibold">{p.title}</h2>
-              <div className="text-xs text-gray-500">{p.type}</div>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3 flex-1">
+              {p.author?.profileImageUrl ? (
+                <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
+                  <img
+                    src={p.author.profileImageUrl}
+                    alt={p.author.name || 'ユーザー'}
+                    className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80"
+                  />
+                </Link>
+              ) : (
+                <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
+                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold cursor-pointer hover:opacity-80">
+                    {(p.author?.name || p.authorUserId.slice(0, 1)).toUpperCase()}
+                  </div>
+                </Link>
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {(p.author as any)?.role === 'politician' ? (
+                    <Link href={`/politicians/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                      {p.author?.name || p.author?.username || `議員${p.authorUserId.slice(0, 4)}`}
+                    </Link>
+                  ) : (p.author as any)?.role === 'admin' ? (
+                    <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                      {p.author?.name || p.author?.username || `運営${p.authorUserId.slice(0, 4)}`}
+                    </Link>
+                  ) : (
+                    <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                      {p.author?.name || p.author?.username || `ユーザー`}
+                    </Link>
+                  )}
+                  {p.author?.username ? (
+                    <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`} className="text-sm text-gray-500 hover:text-blue-600">
+                      @{p.author.username}
+                    </Link>
+                  ) : p.authorUserId ? (
+                    <span className="text-sm text-gray-400">@{p.authorUserId.slice(0, 8)}</span>
+                  ) : null}
+                  <span className="text-xs text-gray-400">
+                    {new Date(p.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  {(p.author as any)?.role === 'politician' && (p.author as any)?.supportedPartyId && (
+                    <span className="text-xs text-gray-500">
+                      {(p.author as any).supportedPartyId === '1' ? '自民党' :
+                       (p.author as any).supportedPartyId === '2' ? '立憲民主党' :
+                       (p.author as any).supportedPartyId === '3' ? '日本維新の会' :
+                       (p.author as any).supportedPartyId === '4' ? '公明党' :
+                       (p.author as any).supportedPartyId === '5' ? '共産党' :
+                       (p.author as any).supportedPartyId === '6' ? '国民民主党' :
+                       (p.author as any).supportedPartyId === '7' ? 'れいわ新選組' :
+                       (p.author as any).supportedPartyId === '8' ? '社民党' :
+                       (p.author as any).supportedPartyId === '9' ? '無所属' : '無所属'}
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-500">
+                    {p.type === 'activity' ? '政治活動' :
+                     p.type === 'pledge' ? '公約' :
+                     p.type === 'question' ? '質問' :
+                     p.type === 'news' ? 'ニュース' : p.type}
+                  </span>
+                </div>
+              </div>
             </div>
-            <ReportButton targetId={p.id} targetType="post" />
+            <div className="flex items-center gap-2">
+              {(p.author as any)?.role === 'politician' && (
+                <FollowButton userId={p.authorUserId} />
+              )}
+              <ReportButton targetId={p.id} targetType="post" />
+            </div>
           </div>
 
-          <p className="mt-3 whitespace-pre-wrap">{p.content}</p>
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold">
+              {p.type === 'activity' ? '政治活動' :
+               p.type === 'pledge' ? '公約' :
+               p.type === 'question' ? '質問' :
+               p.type === 'news' ? 'ニュース' : p.type}
+            </h2>
+            <p className="whitespace-pre-wrap text-gray-800">{p.content}</p>
+          </div>
 
           <div className="mt-3 flex items-center gap-2">
             <button className="rounded bg-green-600 text-white px-3 py-1" onClick={() => onVote(p.id, 'agree')}>
@@ -84,11 +171,9 @@ export default function FeedPage() {
             <button className="rounded bg-red-600 text-white px-3 py-1" onClick={() => onVote(p.id, 'disagree')}>
               反対 {p.disagreeCount ?? 0}
             </button>
-            <span className="text-sm text-gray-600">コメント {p.commentCount ?? 0}</span>
-          </div>
-
-          <div className="mt-4">
-            <CommentsSection postId={p.id} />
+            <Link href={`/posts/${p.id}/comments`} className="text-sm text-blue-600 hover:text-blue-800">
+              コメント {p.commentCount ?? 0}
+            </Link>
           </div>
         </article>
       ))}

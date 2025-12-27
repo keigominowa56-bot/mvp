@@ -3,8 +3,8 @@
 'use client'; 
 
 import React, { useState, useEffect } from 'react';
-import { Post } from '@/types/data';
-import { fetchTimelineData } from '@/utils/fakeApi';
+import { Post } from '../../types/data';
+import { fetchTimelineData } from '../../utils/fakeApi';
 import PostItem from './PostItem';
 import PostForm from './PostForm'; // 🚨 正しいパス
 

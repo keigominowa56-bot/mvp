@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../lib/api';
 import { ThumbsUp, ThumbsDown, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 

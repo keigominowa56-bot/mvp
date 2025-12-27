@@ -25,13 +25,23 @@ export class Comment {
   @Column({ type: 'text' })
   content!: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   mediaIds!: string[] | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   mentions!: string[] | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  parentId!: string | null;
+
+  @ManyToOne(() => Comment, (comment) => comment.children, { onDelete: 'CASCADE', nullable: true })
+  parent!: Comment | null;
+
+  @OneToMany(() => Comment, (comment) => comment.parent)
+  children!: Comment[];
+
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
   @OneToMany(() => CommentReaction, (r) => r.comment)

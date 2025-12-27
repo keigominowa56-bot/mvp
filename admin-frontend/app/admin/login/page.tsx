@@ -1,26 +1,87 @@
 'use client';
+
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { adminLogin } from '@/lib/api';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState(''), [password, setPassword] = useState(''), [msg, setMsg] = useState('');
-  async function onSubmit(e: React.FormEvent) {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMsg('');
-    const res = await fetch('http://localhost:4000/api/auth/admin/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }), credentials: 'include'
-    });
-    if(res.ok) window.location.href = '/dashboard';
-    else { const err = await res.json().catch(()=>({})); setMsg(err.message || 'ログインできません'); }
-  }
+    setError('');
+    setLoading(true);
+
+    try {
+      const result = await adminLogin(email, password);
+      
+      // LocalStorageにトークンを保存
+      if (result.token) {
+        localStorage.setItem('auth_token', result.token);
+        router.push('/dashboard');
+      } else {
+        setError('ログインに失敗しました：トークンが取得できませんでした');
+      }
+    } catch (err: any) {
+      setError(err.message || 'ログインに失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <form className="max-w-md mx-auto space-y-4" onSubmit={onSubmit}>
-      <h1 className="text-xl font-bold mb-3">運営ログイン</h1>
-      <input className="border w-full p-2" placeholder="メール" value={email} onChange={e=>setEmail(e.target.value)} />
-      <input className="border w-full p-2" type="password" placeholder="パスワード" value={password} onChange={e=>setPassword(e.target.value)} />
-      <button className="bg-blue-700 text-white px-4 py-2 w-full" type="submit">ログイン</button>
-      {msg && <div className="text-red-600">{msg}</div>}
-      <div className="pt-2"><a href="/admin/signup" className="text-blue-500 underline text-sm">新規登録はこちら</a></div>
-    </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <form className="max-w-md w-full mx-auto space-y-4 bg-white p-8 rounded-lg shadow-md" onSubmit={handleSubmit}>
+        <h1 className="text-2xl font-bold mb-3 text-center">管理者ログイン</h1>
+        
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-600 rounded p-3">
+            {error}
+          </div>
+        )}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
+          <input
+            className="border w-full p-2 rounded"
+            type="email"
+            placeholder="admin@keygo.jp"
+            value={email}
+            required
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">パスワード</label>
+          <input
+            className="border w-full p-2 rounded"
+            type="password"
+            placeholder="パスワード"
+            value={password}
+            required
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        
+        <button
+          className="bg-blue-700 text-white px-4 py-2 w-full rounded font-bold disabled:opacity-60 hover:bg-blue-800"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? 'ログイン中...' : 'ログイン'}
+        </button>
+        
+        <div className="pt-2 text-center">
+          <a href="/politician/login" className="text-blue-500 underline text-sm">
+            議員ログイン
+          </a>
+        </div>
+      </form>
+    </div>
   );
 }

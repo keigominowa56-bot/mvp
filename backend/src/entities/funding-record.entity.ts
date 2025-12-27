@@ -44,10 +44,10 @@ export class FundingRecord {
   note!: string | null;
 
   // 作成日時（PostgreSQL対応: datetimeではなくtimestamp with time zone）
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
   // 更新日時
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

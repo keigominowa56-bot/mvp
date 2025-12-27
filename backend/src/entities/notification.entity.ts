@@ -23,7 +23,16 @@ export class Notification {
   @Column({ type: 'text' })
   body: string;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  postId: string | null; // コメント通知の場合、投稿ID
+
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  commentId: string | null; // コメント通知の場合、コメントID
+
+  @Column({ type: 'text', nullable: true })
+  commentContent: string | null; // コメント内容
+
+  @Column({ type: 'timestamp', nullable: true })
   readAt: Date | null;
 
   @CreateDateColumn()

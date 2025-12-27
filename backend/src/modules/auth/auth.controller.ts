@@ -1,5 +1,6 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, Get, UnauthorizedException, Headers, UseGuards, Req, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('api/auth')
 export class AuthController {
@@ -15,7 +16,7 @@ export class AuthController {
   }
 
   @Post('admin/login')
-  adminLogin(@Body() body: { email: string; password: string }) {
+  async adminLogin(@Body() body: { email: string; password: string }) {
     return this.auth.login(body.email, body.password, 'admin');
   }
 
@@ -27,5 +28,43 @@ export class AuthController {
   @Post('politician/login')
   politicianLogin(@Body() body: { email: string; password: string }) {
     return this.auth.login(body.email, body.password, 'politician');
+  }
+
+  // Firebase Authentication用エンドポイント（一般ユーザー）
+  @Post('register-firebase')
+  async registerFirebase(
+    @Headers('authorization') authHeader: string,
+    @Body() body: { name: string; username?: string; email: string; phone: string; prefecture: string; prefectureCode: string; city: string }
+  ) {
+    return this.auth.registerFirebaseUser(authHeader, body);
+  }
+
+  @Post('login-firebase')
+  async loginFirebase(@Headers('authorization') authHeader: string) {
+    return this.auth.loginFirebaseUser(authHeader);
+  }
+
+  @Get('me')
+  async getMe(@Headers('authorization') authHeader: string) {
+    return this.auth.getCurrentUser(authHeader);
+  }
+
+  @Get('check-username')
+  async checkUsername(@Query('username') username: string) {
+    return this.auth.checkUsernameAvailability(username);
+  }
+
+  // 管理者専用: 議員登録エンドポイント
+  @UseGuards(AuthGuard('jwt'))
+  @Post('register/politician')
+  async registerPoliticianByAdmin(
+    @Body() body: { email: string; password: string; name: string },
+    @Req() req: any
+  ) {
+    const userRole = req.user?.role || 'user';
+    if (userRole !== 'admin') {
+      throw new UnauthorizedException('この機能は管理者のみ利用できます');
+    }
+    return this.auth.politicianSignup(body);
   }
 }

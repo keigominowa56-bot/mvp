@@ -16,7 +16,7 @@ export class ActivityLog {
   @Column({ type: 'varchar', length: 64 })
   action!: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   data!: Record<string, any> | null;
 
   @CreateDateColumn()
