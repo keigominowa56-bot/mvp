@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull, Not } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { User } from 'src/entities/user.entity';
 import { Politician } from 'src/entities/politician.entity';
 import * as bcrypt from 'bcrypt';
@@ -14,6 +15,7 @@ export class AuthService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Politician) private readonly politicians: Repository<Politician>,
     @Inject(FIREBASE_ADMIN) private readonly firebaseAdmin: admin.app.App,
+    private readonly configService: ConfigService,
   ) {}
 
   async adminSignup(email: string, password: string) {
@@ -41,13 +43,21 @@ export class AuthService {
   }
 
   async login(email: string, password: string, expectedRole: 'admin' | 'politician') {
-    const u = await this.users.findOne({ where: { email } });
+    const u = await this.users.findOne({ 
+      where: { email, deletedAt: IsNull() } as any, // 退会済みユーザーは除外
+    });
     if (!u || !u.passwordHash) throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+    
+    // 退会済みユーザーのチェック（念のため）
+    if (u.deletedAt) {
+      throw new UnauthorizedException('このアカウントは退会済みです。再登録が必要です。');
+    }
+    
     const passwordHash = u.passwordHash; // 型ナローイングのため変数に代入
     const ok = await bcrypt.compare(password, passwordHash);
     if (!ok) throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
     if (u.role !== expectedRole) throw new UnauthorizedException('アカウントの権限が正しくありません');
-    const token = jwt.sign({ sub: u.id, role: u.role }, process.env.JWT_SECRET ?? 'dev-secret', { expiresIn: '7d' });
+    const token = jwt.sign({ sub: u.id, role: u.role }, this.configService.get<string>('JWT_SECRET')!, { expiresIn: '7d' });
     return { token };
   }
 
@@ -59,7 +69,9 @@ export class AuthService {
     if (!/^[a-z0-9_]+$/.test(username)) {
       return { available: false, message: 'ユーザーIDは英数字とアンダースコアのみ使用可能です' };
     }
-    const existing = await this.users.findOne({ where: { username } });
+    const existing = await this.users.findOne({ 
+      where: { username, deletedAt: IsNull() } as any,
+    });
     if (existing) {
       return { available: false, message: 'このユーザーIDは既に使用されています' };
     }
@@ -85,15 +97,84 @@ export class AuthService {
       const firebaseUid = decodedToken.uid;
       const email = decodedToken.email;
 
+      if (!email) {
+        throw new UnauthorizedException('メールアドレスが取得できませんでした');
+      }
+
       // メールアドレス認証チェック
       if (!decodedToken.email_verified) {
         throw new UnauthorizedException('メールアドレスが未認証です。メールに届いたリンクをクリックしてください');
       }
 
-      // 既存ユーザーをチェック
-      const existing = await this.users.findOne({ where: { email } });
+      // 既存ユーザーをチェック（退会していないユーザー）
+      const existing = await this.users.findOne({ 
+        where: { email, deletedAt: IsNull() } as any,
+      });
       if (existing) {
         throw new UnauthorizedException('このメールアドレスは既に登録されています');
+      }
+
+      // 退会済みユーザーを検索（メールアドレスまたは電話番号で）
+      // まずメールアドレスで検索
+      let deletedUser = await this.users.findOne({
+        where: { email, deletedAt: Not(IsNull()) } as any,
+        order: { deletedAt: 'DESC' },
+      });
+      
+      // メールアドレスで見つからない場合、電話番号で検索
+      if (!deletedUser && body.phone) {
+        deletedUser = await this.users.findOne({
+          where: { phoneNumber: body.phone, deletedAt: Not(IsNull()) } as any,
+          order: { deletedAt: 'DESC' },
+        });
+      }
+
+      if (deletedUser) {
+        // 退会済みユーザーを復活させる
+        console.log('[Auth Service] 退会済みユーザーを復活:', deletedUser.id);
+        deletedUser.deletedAt = null;
+        deletedUser.firebaseUid = firebaseUid;
+        deletedUser.status = 'pending';
+        if (email) {
+          deletedUser.email = email; // メールアドレスを更新
+        }
+        if (body.phone) {
+          deletedUser.phoneNumber = body.phone; // 電話番号を更新
+        }
+        if (body.name) {
+          deletedUser.name = body.name; // 名前を更新
+        }
+        if (body.prefecture) {
+          deletedUser.addressPref = body.prefecture;
+        }
+        if (body.city) {
+          deletedUser.addressCity = body.city;
+        }
+        if (body.birthDate) {
+          deletedUser.birthDate = new Date(body.birthDate);
+        }
+        
+        // ユーザーIDの処理（既存のusernameを保持、または新規生成）
+        let username: string;
+        if (body.username) {
+          const normalized = body.username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+          if (normalized.length >= 3 && /^[a-z0-9_]+$/.test(normalized)) {
+            const existingUsername = await this.users.findOne({ where: { username: normalized, deletedAt: IsNull() } as any });
+            if (!existingUsername || existingUsername.id === deletedUser.id) {
+              username = normalized;
+            } else {
+              username = deletedUser.username || normalized; // 既存のusernameを保持
+            }
+          } else {
+            username = deletedUser.username || body.name.toLowerCase().replace(/[^a-z0-9_]/g, '').substring(0, 15) || 'user';
+          }
+        } else {
+          username = deletedUser.username || body.name.toLowerCase().replace(/[^a-z0-9_]/g, '').substring(0, 15) || 'user';
+        }
+        deletedUser.username = username;
+        
+        await this.users.save(deletedUser);
+        return { ok: true, message: 'ユーザー登録が完了しました（過去のアカウントを復活させました）' };
       }
 
       // ユーザーIDの処理
@@ -191,8 +272,18 @@ export class AuthService {
         throw new UnauthorizedException('メールアドレスが未認証です。メールに届いたリンクをクリックしてください');
       }
 
-      // データベースからユーザーを取得
-      let user = await this.users.findOne({ where: { email } });
+      // データベースからユーザーを取得（退会済みユーザーは除外）
+      let user = await this.users.findOne({ 
+        where: { email, deletedAt: IsNull() } as any,
+      });
+      
+      // 退会済みユーザーが存在する場合はエラー
+      const deletedUser = await this.users.findOne({ 
+        where: { email, deletedAt: Not(IsNull()) } as any,
+      });
+      if (deletedUser) {
+        throw new UnauthorizedException('このアカウントは退会済みです。再登録が必要です。');
+      }
       
       // ユーザーが存在しない場合は自動的に作成（Firebase-MySQL同期）
       if (!user) {
@@ -218,7 +309,7 @@ export class AuthService {
       // JWTトークンを生成
       const token = jwt.sign(
         { sub: user.id, role: user.role, email: user.email },
-        process.env.JWT_SECRET ?? 'dev-secret',
+        this.configService.get<string>('JWT_SECRET')!,
         { expiresIn: '7d' }
       );
 
@@ -246,13 +337,18 @@ export class AuthService {
 
     // まずJWTトークンとして検証を試みる
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET ?? 'dev-secret') as { sub: string; role: string; email?: string };
+      const decoded = jwt.verify(token, this.configService.get<string>('JWT_SECRET')!) as { sub: string; role: string; email?: string };
       console.log('[Auth Service] getCurrentUser - JWT検証成功. ユーザーID:', decoded.sub, 'Role:', decoded.role);
       
       const user = await this.users.findOne({ where: { id: decoded.sub } });
       if (!user) {
         console.error('[Auth Service] getCurrentUser - ユーザーが見つかりません. ID:', decoded.sub);
         throw new UnauthorizedException('ユーザーが見つかりません');
+      }
+      
+      // 退会済みユーザーのチェック
+      if (user.deletedAt) {
+        throw new UnauthorizedException('このアカウントは退会済みです。再登録が必要です。');
       }
 
       console.log('[Auth Service] getCurrentUser - ユーザー情報取得成功:', user.email);

@@ -27,6 +27,14 @@ export default function FollowButton({ userId }: { userId: string }) {
       alert('ログインしてください');
       return;
     }
+    
+    // 応援解除の場合は確認ダイアログを表示
+    if (followed) {
+      if (!confirm('応援を解除しますか？')) {
+        return;
+      }
+    }
+    
     setLoading(true);
     try {
       if (followed) {
@@ -51,7 +59,7 @@ export default function FollowButton({ userId }: { userId: string }) {
         followed ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-blue-600 text-white hover:bg-blue-700'
       } disabled:opacity-50`}
     >
-      {loading ? '処理中...' : followed ? '応援解除' : '応援する'}
+      {loading ? '処理中...' : followed ? '応援中' : '応援する'}
     </button>
   );
 }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, UserStatus } from 'src/entities/user.entity';
 import { Member } from 'src/entities/member.entity'; // Memberエンティティをimport
@@ -19,7 +19,9 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.users.find();
+    return this.users.find({ 
+      where: { deletedAt: IsNull() } as FindOptionsWhere<User>,
+    });
   }
 
   async updateProfile(userId: string, dto: {
@@ -54,7 +56,58 @@ export class UsersService {
     return this.users.save(user);
   }
 
-  // createUser：usersとmembersに両方登録
+  // 退会処理（論理削除）- データは保持される
+  async deactivateAccount(userId: string): Promise<{ message: string }> {
+    const user = await this.users.findOne({ where: { id: userId } as FindOptionsWhere<User> });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 論理削除：deletedAtに現在の日時を設定
+    user.deletedAt = new Date();
+    await this.users.save(user);
+
+    return { message: 'アカウントが退会処理されました。データは保持されます。' };
+  }
+
+  async findDeletedUserByEmailOrPhone(email?: string, phoneNumber?: string): Promise<User | null> {
+    if (!email && !phoneNumber) {
+      return null;
+    }
+    
+    // メールアドレスで検索
+    if (email) {
+      const userByEmail = await this.users.findOne({ 
+        where: { email, deletedAt: Not(IsNull()) } as FindOptionsWhere<User>,
+        order: { deletedAt: 'DESC' }, // 最新の退会ユーザーを取得
+      });
+      if (userByEmail) {
+        return userByEmail;
+      }
+    }
+    
+    // 電話番号で検索
+    if (phoneNumber) {
+      const userByPhone = await this.users.findOne({ 
+        where: { phoneNumber, deletedAt: Not(IsNull()) } as FindOptionsWhere<User>,
+        order: { deletedAt: 'DESC' }, // 最新の退会ユーザーを取得
+      });
+      if (userByPhone) {
+        return userByPhone;
+      }
+    }
+    
+    return null;
+  }
+
+  async reactivateUser(userId: string, firebaseUid: string): Promise<User> {
+    const user = await this.findById(userId);
+    user.deletedAt = null;
+    user.firebaseUid = firebaseUid;
+    user.status = 'pending'; // 再登録時は承認待ち状態に
+    return this.users.save(user);
+  }
+
   async createUser(body: {
     email: string;
     password: string;

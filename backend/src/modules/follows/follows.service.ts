@@ -31,14 +31,42 @@ export class FollowsService {
     return rows.map((r) => r.targetUserId);
   }
 
-  async listFollowedUsers(userId: string): Promise<User[]> {
+  async listFollowedUsers(userId: string): Promise<any[]> {
     const rows = await this.follows.find({ where: { followerUserId: userId } });
     const targetUserIds = rows.map((r) => r.targetUserId);
     if (targetUserIds.length === 0) return [];
     const users = await this.users.find({ 
       where: targetUserIds.map(id => ({ id })) as any,
     });
-    return users.filter(u => u.role === 'politician'); // 議員のみ返す
+    const politicians = users.filter(u => u.role === 'politician'); // 議員のみ返す
+    
+    // 拡張プロフィール情報を取得
+    const { PoliticianProfileExtended } = await import('../../entities/politician-profile-extended.entity');
+    const extendedRepo = this.users.manager.getRepository(PoliticianProfileExtended);
+    
+    const politiciansWithExtended = await Promise.all(
+      politicians.map(async (politician) => {
+        const extended = await extendedRepo.findOne({ 
+          where: { userId: politician.id },
+        });
+        
+        if (extended) {
+          return {
+            ...politician,
+            party: extended.party || politician.supportedPartyId,
+            district: extended.district,
+            // 拡張プロフィールの画像を優先
+            profileImageUrl: extended.profileImageUrl || politician.profileImageUrl,
+            // 拡張プロフィールの名前を優先
+            name: extended.name || politician.name || politician.username,
+          };
+        }
+        
+        return politician;
+      })
+    );
+    
+    return politiciansWithExtended;
   }
 
   async getFollowerCount(targetUserId: string): Promise<number> {

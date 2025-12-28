@@ -60,8 +60,11 @@ export class PostsService {
       qb = qb.take(20);
     }
 
-    // 著者情報も取得（@JoinColumnでauthorUserIdが指定されているので、通常のleftJoinAndSelectで動作する）
+    // 著者情報も取得（退会済みユーザーも含める - 投稿は表示されるが、著者情報はnullになる可能性がある）
     qb = qb.leftJoinAndSelect('p.author', 'author');
+    
+    // 退会済みユーザーの投稿は除外する場合の条件（必要に応じてコメントアウトを解除）
+    // qb = qb.andWhere('author.deletedAt IS NULL OR author.id IS NULL');
     
     const posts = await qb.getMany();
     

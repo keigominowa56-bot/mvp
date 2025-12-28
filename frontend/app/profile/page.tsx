@@ -136,16 +136,79 @@ export default function ProfilePage() {
     );
   }
 
+  async function handleDeactivate() {
+    if (!confirm('本当に退会しますか？\n\n退会後も投稿、コメント、投票などのデータは保持されます。\n同じメールアドレスまたは電話番号で再登録すると、過去のデータに紐付けられます。')) {
+      return;
+    }
+    
+    if (!confirm('退会を実行しますか？\n\nアカウントは退会状態になりますが、データは保持されます。\n再登録時に過去のデータを引き継ぐことができます。')) {
+      return;
+    }
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (!token) {
+        alert('ログインが必要です');
+        return;
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/api/users/deactivate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        alert('退会処理が完了しました。データは保持されます。');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || '退会処理に失敗しました');
+      }
+    } catch (err: any) {
+      console.error('退会処理エラー:', err);
+      alert('退会処理に失敗しました');
+    }
+  }
+
   if (!editing) {
     return (
       <div className="bg-white border rounded p-4 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">プロフィール</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">プロフィール</h1>
+          <button
+            onClick={handleDeactivate}
+            className="text-sm text-red-600 hover:text-red-800 px-3 py-1 border border-red-600 rounded hover:bg-red-50"
+          >
+            退会する
+          </button>
+        </div>
         
         {user && (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               {user.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" />
+                <img 
+                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}${user.profileImageUrl}`} 
+                  alt="プロフィール画像" 
+                  className="w-24 h-24 rounded-full object-cover border"
+                  onError={(e) => {
+                    // 画像の読み込みに失敗した場合、デフォルト画像を表示
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl';
+                      fallback.textContent = (user.name || 'ユーザー').charAt(0);
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">
                   {(user.name || 'ユーザー').charAt(0)}
@@ -170,31 +233,49 @@ export default function ProfilePage() {
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-3">応援している議員</h3>
                 <div className="space-y-2">
-                  {followedPoliticians.map((politician) => (
-                    <Link
-                      key={politician.id}
-                      href={`/politicians/${politician.id}`}
-                      className="flex items-center gap-3 p-3 border rounded hover:bg-gray-50"
-                    >
-                      {politician.profileImageUrl ? (
-                        <img
-                          src={politician.profileImageUrl}
-                          alt={politician.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">
-                          {(politician.name || '議員').charAt(0)}
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <p className="font-semibold">{politician.name || '議員'}</p>
-                        {politician.username && (
-                          <p className="text-sm text-gray-500">@{politician.username}</p>
+                  {followedPoliticians.map((politician) => {
+                    // 政党名を取得
+                    const partyName = politician.party || 
+                      (politician.supportedPartyId ? PARTIES.find(p => p.id === politician.supportedPartyId)?.name : null);
+                    
+                    return (
+                      <Link
+                        key={politician.id}
+                        href={`/politicians/${politician.id}`}
+                        className="flex items-center gap-3 p-3 border rounded hover:bg-gray-50"
+                      >
+                        {politician.profileImageUrl ? (
+                          <img
+                            src={politician.profileImageUrl}
+                            alt={politician.name || '議員'}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">
+                            {(politician.name || '議員').charAt(0)}
+                          </div>
                         )}
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="flex-1">
+                          <p className="font-semibold">{politician.name || politician.username || '議員'}</p>
+                          {politician.username && (
+                            <p className="text-sm text-gray-500">@{politician.username}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {partyName && (
+                              <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                                {partyName}
+                              </span>
+                            )}
+                            {politician.district && (
+                              <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                                {politician.district}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}

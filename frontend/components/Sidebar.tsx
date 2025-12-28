@@ -34,7 +34,7 @@ export default function Sidebar() {
   return (
     <aside className="space-y-4">
       <nav className="card space-y-2 sticky top-4">
-        <div className="text-lg font-semibold">サイト名</div>
+        <div className="text-lg font-semibold">Polimee</div>
 
         {/* 検索 */}
         <form

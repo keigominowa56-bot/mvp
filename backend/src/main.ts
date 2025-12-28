@@ -64,17 +64,18 @@ async function bootstrap() {
     prefix: '/uploads',
   });
 
-  // ======== ここを追記！ ========
+  // CORS設定
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
   app.enableCors({
-    origin: [
-      'http://localhost:3000', // Next.jsフロントのURL（必要に応じて3001も加える）
-      'http://localhost:3001'
-    ],
+    origin: allowedOrigins,
     credentials: true,
   });
-  // ============================
 
-  const port = 4000;
+  // ポート設定（Render等の本番環境ではprocess.env.PORTを使用）
+  const port = parseInt(process.env.PORT || process.env.BACKEND_PORT || '4000', 10);
   let retries = 0;
   const maxRetries = 5;
   

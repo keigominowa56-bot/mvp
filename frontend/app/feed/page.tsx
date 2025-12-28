@@ -123,19 +123,33 @@ export default function FeedPage() {
                     {new Date(p.createdAt).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  {(p.author as any)?.role === 'politician' && (p.author as any)?.supportedPartyId && (
-                    <span className="text-xs text-gray-500">
-                      {(p.author as any).supportedPartyId === '1' ? '自民党' :
-                       (p.author as any).supportedPartyId === '2' ? '立憲民主党' :
-                       (p.author as any).supportedPartyId === '3' ? '日本維新の会' :
-                       (p.author as any).supportedPartyId === '4' ? '公明党' :
-                       (p.author as any).supportedPartyId === '5' ? '共産党' :
-                       (p.author as any).supportedPartyId === '6' ? '国民民主党' :
-                       (p.author as any).supportedPartyId === '7' ? 'れいわ新選組' :
-                       (p.author as any).supportedPartyId === '8' ? '社民党' :
-                       (p.author as any).supportedPartyId === '9' ? '無所属' : '無所属'}
-                    </span>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  {(p.author as any)?.role === 'politician' && (
+                    <>
+                      {(p.author as any)?.party && (
+                        <span className="text-xs text-gray-500">
+                          {(p.author as any).party}
+                        </span>
+                      )}
+                      {!(p.author as any)?.party && (p.author as any)?.supportedPartyId && (
+                        <span className="text-xs text-gray-500">
+                          {(p.author as any).supportedPartyId === '1' ? '自民党' :
+                           (p.author as any).supportedPartyId === '2' ? '立憲民主党' :
+                           (p.author as any).supportedPartyId === '3' ? '日本維新の会' :
+                           (p.author as any).supportedPartyId === '4' ? '公明党' :
+                           (p.author as any).supportedPartyId === '5' ? '共産党' :
+                           (p.author as any).supportedPartyId === '6' ? '国民民主党' :
+                           (p.author as any).supportedPartyId === '7' ? 'れいわ新選組' :
+                           (p.author as any).supportedPartyId === '8' ? '社民党' :
+                           (p.author as any).supportedPartyId === '9' ? '無所属' : '無所属'}
+                        </span>
+                      )}
+                      {(p.author as any)?.district && (
+                        <span className="text-xs text-gray-500">
+                          {(p.author as any).district}
+                        </span>
+                      )}
+                    </>
                   )}
                   <span className="text-xs text-gray-500">
                     {p.type === 'activity' ? '政治活動' :
