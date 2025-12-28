@@ -37,8 +37,16 @@ export const FirebaseAdminProvider: Provider = {
       console.log('[Firebase Provider] Firebase Admin SDK を初期化中...');
       console.log('- 認証ファイル:', firebaseAuthPath);
       
+      // JSONファイルを読み込む
+      const serviceAccountJson = JSON.parse(fs.readFileSync(firebaseAuthPath, 'utf8'));
+      
+      // private_keyフィールドの改行コードを処理（\nを実際の改行に変換）
+      if (serviceAccountJson.private_key) {
+        serviceAccountJson.private_key = serviceAccountJson.private_key.replace(/\\n/g, '\n');
+      }
+      
       const app = admin.initializeApp({
-        credential: admin.credential.cert(firebaseAuthPath),
+        credential: admin.credential.cert(serviceAccountJson),
       });
 
       console.log('[Firebase Provider] ✓ Firebase Admin SDK の初期化に成功しました');
