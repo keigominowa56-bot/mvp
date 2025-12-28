@@ -73,17 +73,48 @@ import { UsersModule } from './modules/users/users.module';
         
         // DATABASE_URLが設定されている場合は優先（PostgreSQL形式: postgresql://user:pass@host:port/dbname）
         const databaseUrl = config.get<string>('DATABASE_URL');
+        console.log('[AppModule] DATABASE_URL確認:', databaseUrl ? '設定されています (' + databaseUrl.substring(0, 30) + '...)' : '設定されていません');
+        
         if (databaseUrl) {
+          console.log('[AppModule] DATABASE_URLが設定されています。パースを試みます...');
+          
           // DATABASE_URLから接続情報を抽出
-          const urlMatch = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-          if (urlMatch) {
-            const [, urlUser, urlPass, urlHost, urlPort, urlDb] = urlMatch;
+          // postgresql://user:pass@host:port/dbname または postgresql://user:pass@host/dbname
+          // パスワードに特殊文字が含まれる可能性があるため、URL.parseを使用
+          let urlUser: string;
+          let urlPass: string;
+          let urlHost: string;
+          let urlPort: string | undefined;
+          let urlDb: string;
+          
+          try {
+            // URL.parseを使用してより確実にパース
+            const url = new URL(databaseUrl);
+            urlUser = decodeURIComponent(url.username);
+            urlPass = decodeURIComponent(url.password);
+            urlHost = url.hostname;
+            urlPort = url.port || undefined;
+            urlDb = decodeURIComponent(url.pathname.substring(1)); // 先頭の/を削除
+            
+            const port = urlPort ? parseInt(urlPort, 10) : 5432; // デフォルトポート5432
+            
+            console.log('[AppModule] DATABASE_URLパース成功:');
+            console.log('  host:', urlHost);
+            console.log('  port:', port);
+            console.log('  user:', urlUser);
+            console.log('  database:', urlDb);
+            console.log('  password length:', urlPass.length);
+            console.log('  password preview:', urlPass.substring(0, 3) + '***');
+            
+            // パスワードは既にデコード済み
+            const decodedPassword = urlPass;
+            
             return {
               type: 'postgres',
               host: urlHost,
-              port: parseInt(urlPort, 10),
+              port: port,
               username: urlUser,
-              password: urlPass,
+              password: decodedPassword,
               database: urlDb,
               entities: [__dirname + '/entities/**/*.js', __dirname + '/modules/**/entities/**/*.js'],
               synchronize: isDevelopment,
@@ -94,11 +125,58 @@ import { UsersModule } from './modules/users/users.module';
               dropSchema: false,
               migrationsRun: false,
             };
+          } catch (parseError) {
+            console.error('[AppModule] DATABASE_URLのパースに失敗しました:', parseError instanceof Error ? parseError.message : String(parseError));
+            console.error('[AppModule] DATABASE_URL形式を確認してください:', databaseUrl.substring(0, 80) + '...');
+            console.error('[AppModule] DATABASE_URL全体の長さ:', databaseUrl.length);
+            
+            // フォールバック: 正規表現でパースを試みる
+            console.log('[AppModule] 正規表現によるフォールバックパースを試みます...');
+            const urlMatch = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:\/]+)(?::(\d+))?\/(.+)/);
+            if (urlMatch) {
+              const [, fallbackUser, fallbackPass, fallbackHost, fallbackPort, fallbackDb] = urlMatch;
+              const fallbackPortNum = fallbackPort ? parseInt(fallbackPort, 10) : 5432;
+              
+              // パスワードのデコードを試みる
+              let decodedPassword = fallbackPass;
+              try {
+                decodedPassword = decodeURIComponent(fallbackPass);
+              } catch (e) {
+                // URLエンコードされていない場合はそのまま使用
+                decodedPassword = fallbackPass;
+              }
+              
+              console.log('[AppModule] フォールバックパース成功');
+              
+              return {
+                type: 'postgres',
+                host: fallbackHost,
+                port: fallbackPortNum,
+                username: fallbackUser,
+                password: decodedPassword,
+                database: fallbackDb,
+                entities: [__dirname + '/entities/**/*.js', __dirname + '/modules/**/entities/**/*.js'],
+                synchronize: isDevelopment,
+                logging: isDevelopment,
+                extra: {
+                  connectionLimit: 10,
+                },
+                dropSchema: false,
+                migrationsRun: false,
+              };
+            }
           }
         }
         
         // DATABASE_URLがない場合は個別設定を使用（MySQLまたはPostgreSQL）
         const dbType = config.get<string>('DB_TYPE') || 'mysql'; // デフォルトはMySQL
+        
+        console.log('[AppModule] DATABASE_URLが設定されていないか、パースに失敗しました。個別設定を使用します:');
+        console.log('  DB_TYPE:', dbType);
+        console.log('  host:', dbHost);
+        console.log('  port:', dbPort);
+        console.log('  user:', dbUser);
+        console.log('  database:', dbName);
         
         return {
           type: dbType === 'postgres' ? 'postgres' : 'mysql',
