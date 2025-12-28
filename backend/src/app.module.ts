@@ -71,8 +71,37 @@ import { UsersModule } from './modules/users/users.module';
           }
         }
         
+        // DATABASE_URLが設定されている場合は優先（PostgreSQL形式: postgresql://user:pass@host:port/dbname）
+        const databaseUrl = config.get<string>('DATABASE_URL');
+        if (databaseUrl) {
+          // DATABASE_URLから接続情報を抽出
+          const urlMatch = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+          if (urlMatch) {
+            const [, urlUser, urlPass, urlHost, urlPort, urlDb] = urlMatch;
+            return {
+              type: 'postgres',
+              host: urlHost,
+              port: parseInt(urlPort, 10),
+              username: urlUser,
+              password: urlPass,
+              database: urlDb,
+              entities: [__dirname + '/entities/**/*.js', __dirname + '/modules/**/entities/**/*.js'],
+              synchronize: isDevelopment,
+              logging: isDevelopment,
+              extra: {
+                connectionLimit: 10,
+              },
+              dropSchema: false,
+              migrationsRun: false,
+            };
+          }
+        }
+        
+        // DATABASE_URLがない場合は個別設定を使用（MySQLまたはPostgreSQL）
+        const dbType = config.get<string>('DB_TYPE') || 'mysql'; // デフォルトはMySQL
+        
         return {
-          type: 'mysql',
+          type: dbType === 'postgres' ? 'postgres' : 'mysql',
           host: dbHost,
           port: parseInt(dbPort, 10),
           username: dbUser,

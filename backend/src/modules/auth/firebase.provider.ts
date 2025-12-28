@@ -26,12 +26,30 @@ export const FirebaseAdminProvider: Provider = {
     }
 
     try {
-      // 改行コードを正しく処理
-      const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+      // 改行コードを正しく処理（複数のパターンに対応）
+      // Renderなどの環境変数では、\nが文字列として渡される可能性がある
+      let formattedPrivateKey = privateKey;
+      
+      // パターン1: \\n を \n に変換（エスケープされた改行）
+      formattedPrivateKey = formattedPrivateKey.replace(/\\n/g, '\n');
+      
+      // パターン2: 実際の改行が含まれている場合はそのまま使用
+      // パターン3: BEGIN/ENDの前後で改行が不足している場合は追加
+      if (!formattedPrivateKey.includes('\n')) {
+        // BEGIN PRIVATE KEYの後に改行がない場合
+        formattedPrivateKey = formattedPrivateKey.replace(/-----BEGIN PRIVATE KEY-----/g, '-----BEGIN PRIVATE KEY-----\n');
+        // END PRIVATE KEYの前に改行がない場合
+        formattedPrivateKey = formattedPrivateKey.replace(/-----END PRIVATE KEY-----/g, '\n-----END PRIVATE KEY-----');
+      }
+      
+      // 先頭と末尾の空白・改行を削除
+      formattedPrivateKey = formattedPrivateKey.trim();
       
       console.log('[Firebase Provider] Firebase Admin SDK を初期化中...');
       console.log('- Project ID:', projectId);
       console.log('- Client Email:', clientEmail);
+      console.log('- Private Key length:', formattedPrivateKey.length);
+      console.log('- Private Key starts with:', formattedPrivateKey.substring(0, 30));
       
       const app = admin.initializeApp({
         credential: admin.credential.cert({
