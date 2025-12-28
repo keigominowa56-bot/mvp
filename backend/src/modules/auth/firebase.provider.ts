@@ -26,51 +26,15 @@ export const FirebaseAdminProvider: Provider = {
     }
 
     try {
-      // 改行コードを正しく処理（複数のパターンに対応）
+      // 改行コードを正しく処理
       // Renderなどの環境変数では、\nが文字列として渡される可能性がある
-      let formattedPrivateKey = privateKey;
-      
       // パターン1: \\n を \n に変換（エスケープされた改行）
-      formattedPrivateKey = formattedPrivateKey.replace(/\\n/g, '\n');
-      
-      // パターン2: BEGIN/ENDの間のBase64部分を抽出して正しくフォーマット
-      const beginMarker = '-----BEGIN PRIVATE KEY-----';
-      const endMarker = '-----END PRIVATE KEY-----';
-      
-      const beginIndex = formattedPrivateKey.indexOf(beginMarker);
-      const endIndex = formattedPrivateKey.indexOf(endMarker);
-      
-      if (beginIndex !== -1 && endIndex !== -1) {
-        const beforeBegin = formattedPrivateKey.substring(0, beginIndex).trim();
-        const afterEnd = formattedPrivateKey.substring(endIndex + endMarker.length).trim();
-        
-        // BEGINとENDの間の部分を抽出
-        const base64Content = formattedPrivateKey
-          .substring(beginIndex + beginMarker.length, endIndex)
-          .replace(/\s+/g, '') // すべての空白文字を削除
-          .trim();
-        
-        // Base64部分を64文字ごとに改行を挿入
-        const formattedBase64 = base64Content.match(/.{1,64}/g)?.join('\n') || base64Content;
-        
-        // 正しい形式に再構築
-        formattedPrivateKey = [
-          beforeBegin,
-          beginMarker,
-          formattedBase64,
-          endMarker,
-          afterEnd
-        ].filter(Boolean).join('\n');
-      } else {
-        // BEGIN/ENDが見つからない場合のフォールバック処理
-        if (!formattedPrivateKey.includes('\n')) {
-          formattedPrivateKey = formattedPrivateKey.replace(/-----BEGIN PRIVATE KEY-----/g, '-----BEGIN PRIVATE KEY-----\n');
-          formattedPrivateKey = formattedPrivateKey.replace(/-----END PRIVATE KEY-----/g, '\n-----END PRIVATE KEY-----');
-        }
-      }
-      
-      // 先頭と末尾の空白・改行を削除
-      formattedPrivateKey = formattedPrivateKey.trim();
+      // パターン2: 万が一、鍵が1行に繋がって読み込まれてしまった場合に備え、
+      // Base64文字（\w = [A-Za-z0-9_]）や +, /, = の前のスペースを改行に変換
+      const formattedPrivateKey = privateKey
+        ?.replace(/\\n/g, '\n')
+        .replace(/\s(?=[\w/+=])/g, '\n')
+        .trim() || privateKey;
       
       console.log('[Firebase Provider] Firebase Admin SDK を初期化中...');
       console.log('- Project ID:', projectId);
