@@ -58,10 +58,31 @@ export const FirebaseAdminProvider: Provider = {
           const afterEnd = privateKey.substring(endIndex);
           
           // Base64部分の空白・改行をすべて削除
-          const cleanBase64 = base64Part.replace(/\s+/g, '').trim();
+          let cleanBase64 = base64Part.replace(/\s+/g, '').trim();
           
-          // Base64文字列の長さを確認（4の倍数である必要がある）
-          console.log('[Firebase Provider] Base64部分の長さ:', cleanBase64.length);
+          // Base64文字列の検証とパディング補正
+          // Base64文字列は4の倍数である必要がある
+          const remainder = cleanBase64.length % 4;
+          if (remainder !== 0) {
+            // パディング（=）を追加して4の倍数にする
+            cleanBase64 = cleanBase64 + '='.repeat(4 - remainder);
+            console.log('[Firebase Provider] Base64部分にパディングを追加:', 4 - remainder, '文字');
+          }
+          
+          // Base64文字列の検証（A-Z, a-z, 0-9, +, /, = のみ）
+          if (!/^[A-Za-z0-9+/=]+$/.test(cleanBase64)) {
+            console.error('[Firebase Provider] Base64部分に不正な文字が含まれています');
+            // 不正な文字を削除
+            cleanBase64 = cleanBase64.replace(/[^A-Za-z0-9+/=]/g, '');
+            // 再度パディングを補正
+            const newRemainder = cleanBase64.length % 4;
+            if (newRemainder !== 0) {
+              cleanBase64 = cleanBase64 + '='.repeat(4 - newRemainder);
+            }
+          }
+          
+          // Base64文字列の長さを確認
+          console.log('[Firebase Provider] Base64部分の長さ:', cleanBase64.length, '(4の倍数:', cleanBase64.length % 4 === 0 ? 'Yes' : 'No', ')');
           console.log('[Firebase Provider] Base64部分の先頭:', cleanBase64.substring(0, 20));
           console.log('[Firebase Provider] Base64部分の末尾:', cleanBase64.substring(cleanBase64.length - 20));
           
