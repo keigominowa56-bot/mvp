@@ -40,9 +40,39 @@ export const FirebaseAdminProvider: Provider = {
       // JSONファイルを読み込む
       const serviceAccountJson = JSON.parse(fs.readFileSync(firebaseAuthPath, 'utf8'));
       
-      // private_keyフィールドの改行コードを処理（\nを実際の改行に変換）
+      // private_keyフィールドの改行コードを処理
       if (serviceAccountJson.private_key) {
-        serviceAccountJson.private_key = serviceAccountJson.private_key.replace(/\\n/g, '\n');
+        // \nを実際の改行に変換
+        let privateKey = serviceAccountJson.private_key.replace(/\\n/g, '\n');
+        
+        // BEGIN/ENDマーカーの間のBase64部分を抽出して正しくフォーマット
+        const beginMarker = '-----BEGIN PRIVATE KEY-----';
+        const endMarker = '-----END PRIVATE KEY-----';
+        
+        const beginIndex = privateKey.indexOf(beginMarker);
+        const endIndex = privateKey.indexOf(endMarker);
+        
+        if (beginIndex !== -1 && endIndex !== -1) {
+          const beforeBegin = privateKey.substring(0, beginIndex + beginMarker.length);
+          const base64Part = privateKey.substring(beginIndex + beginMarker.length, endIndex);
+          const afterEnd = privateKey.substring(endIndex);
+          
+          // Base64部分の空白・改行をすべて削除
+          const cleanBase64 = base64Part.replace(/\s+/g, '');
+          
+          // Base64部分を64文字ごとに改行を挿入
+          const formattedBase64 = cleanBase64.match(/.{1,64}/g)?.join('\n') || cleanBase64;
+          
+          // 正しい形式に再構築
+          serviceAccountJson.private_key = beforeBegin + '\n' + formattedBase64 + '\n' + afterEnd;
+        } else {
+          // BEGIN/ENDが見つからない場合は、単純に\nを変換
+          serviceAccountJson.private_key = privateKey;
+        }
+        
+        console.log('[Firebase Provider] Private Key処理完了');
+        console.log('- Private Key length:', serviceAccountJson.private_key.length);
+        console.log('- Private Key starts with:', serviceAccountJson.private_key.substring(0, 50));
       }
       
       const app = admin.initializeApp({
