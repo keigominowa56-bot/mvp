@@ -134,14 +134,46 @@ TWITTER_API_SECRET=JxIvbHk9m3DdnPhtCSySaUIX3qZEsUz1DIO3vFRlJG8fJOPTXI
 
 `password authentication failed for user "admin"`エラーが出る場合：
 
+### ❌ よくある間違い
+
+**間違った設定例：**
+```
+DB_PASSWORD="DB_PASSWORD=fdSAL9VLSAlwHjAUBY5XbedkWOENLp24"
+```
+
+**正しい設定：**
+```
+DB_PASSWORD=fdSAL9VLSAlwHjAUBY5XbedkWOENLp24
+```
+
+**重要：**
+- 環境変数の値には引用符（`"`）を含めないでください
+- 環境変数名（`DB_PASSWORD=`）を値に含めないでください
+- 値のみを設定してください（例：`fdSAL9VLSAlwHjAUBY5XbedkWOENLp24`）
+
+### 修正手順
+
 1. **DATABASE_URLの確認**: Renderの環境変数で`DATABASE_URL`が正しく設定されているか確認
-2. **個別設定の確認**: `DATABASE_URL`が設定されていない場合、以下の環境変数が設定されているか確認：
+   - 正しい形式: `postgresql://admin:fdSAL9VLSAlwHjAUBY5XbedkWOENLp24@dpg-d58d6oeuk2gs73dhrijg-a/mvp_database_g0ic`
+   - ポート番号が含まれていない場合は、デフォルトで5432が使用されます
+
+2. **個別設定の確認**: `DATABASE_URL`が設定されていない場合、以下の環境変数が正しく設定されているか確認：
    - `DB_TYPE=postgres`
    - `DB_HOST=dpg-d58d6oeuk2gs73dhrijg-a`
    - `DB_PORT=5432`
    - `DB_USERNAME=admin`
-   - `DB_PASSWORD=fdSAL9VLSAlwHjAUBY5XbedkWOENLp24`
+   - `DB_PASSWORD=fdSAL9VLSAlwHjAUBY5XbedkWOENLp24` ← **引用符なし、値のみ**
    - `DB_DATABASE=mvp_database_g0ic`
 
 **推奨**: `DATABASE_URL`を使用する場合、個別の環境変数（`DB_HOST`、`DB_USERNAME`など）は削除してください。両方が設定されていると、`DATABASE_URL`が優先されますが、パースに失敗した場合に個別設定が使用されます。
+
+### 現在の設定の問題点
+
+現在の設定で以下の問題があります：
+
+1. ❌ `DB_PASSWORD="DB_PASSWORD=fdSAL9VLSAlwHjAUBY5XbedkWOENLp24"` → 値が間違っています
+   - ✅ 修正: `DB_PASSWORD=fdSAL9VLSAlwHjAUBY5XbedkWOENLp24`
+
+2. ⚠️ `FIREBASE_PRIVATE_KEY`に引用符が含まれている可能性があります
+   - ✅ 修正: 引用符を削除し、値のみを設定してください
 

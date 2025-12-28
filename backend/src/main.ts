@@ -7,7 +7,28 @@ import { join } from 'path';
 
 const execAsync = promisify(exec);
 
+// lsofコマンドが利用可能かチェック
+async function isLsofAvailable(): Promise<boolean> {
+  try {
+    await execAsync('which lsof');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function killProcessOnPort(port: number): Promise<boolean> {
+  // 本番環境ではポートチェックをスキップ
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+  
+  // lsofが利用できない場合はスキップ
+  if (!(await isLsofAvailable())) {
+    console.log(`⚠️  lsof command not available. Skipping port cleanup.`);
+    return false;
+  }
+  
   try {
     const { stdout } = await execAsync(`lsof -ti:${port}`);
     const pids = stdout.trim().split('\n').filter(Boolean);
@@ -26,7 +47,7 @@ async function killProcessOnPort(port: number): Promise<boolean> {
     return false;
   } catch (error: any) {
     // プロセスが見つからない場合は正常
-    if (error.code === 1 || error.message.includes('No such process')) {
+    if (error.code === 1 || error.code === 127 || error.message.includes('No such process') || error.message.includes('not found')) {
       return false;
     }
     throw error;
@@ -34,11 +55,22 @@ async function killProcessOnPort(port: number): Promise<boolean> {
 }
 
 async function isPortAvailable(port: number): Promise<boolean> {
+  // 本番環境ではポートチェックをスキップ（常に利用可能とみなす）
+  if (process.env.NODE_ENV === 'production') {
+    return true;
+  }
+  
+  // lsofが利用できない場合はスキップ（利用可能とみなす）
+  if (!(await isLsofAvailable())) {
+    console.log(`⚠️  lsof command not available. Assuming port ${port} is available.`);
+    return true;
+  }
+  
   try {
     const { stdout } = await execAsync(`lsof -ti:${port}`);
     return stdout.trim().length === 0;
   } catch (error: any) {
-    if (error.code === 1) {
+    if (error.code === 1 || error.code === 127) {
       return true; // プロセスが見つからない = ポートは利用可能
     }
     throw error;
@@ -76,6 +108,21 @@ async function bootstrap() {
 
   // ポート設定（Render等の本番環境ではprocess.env.PORTを使用）
   const port = parseInt(process.env.PORT || process.env.BACKEND_PORT || '4000', 10);
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // 本番環境ではポートチェックをスキップして直接起動
+  if (isProduction) {
+    try {
+      await app.listen(port);
+      console.log(`✅ Server is running on port ${port}`);
+      return;
+    } catch (error: any) {
+      console.error(`❌ Failed to start server on port ${port}:`, error.message);
+      throw error;
+    }
+  }
+  
+  // 開発環境のみポートチェックとリトライロジックを実行
   let retries = 0;
   const maxRetries = 5;
   
