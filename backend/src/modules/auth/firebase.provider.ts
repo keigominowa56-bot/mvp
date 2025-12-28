@@ -1,46 +1,44 @@
-import { ConfigService } from '@nestjs/config';
 import { Provider } from '@nestjs/common';
 import * as admin from 'firebase-admin';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export const FIREBASE_ADMIN = 'FIREBASE_ADMIN';
 
 export const FirebaseAdminProvider: Provider = {
   provide: FIREBASE_ADMIN,
-  inject: [ConfigService],
-  useFactory: (config: ConfigService) => {
-    const projectId = config.get<string>('FIREBASE_PROJECT_ID');
-    const clientEmail = config.get<string>('FIREBASE_CLIENT_EMAIL');
-    const privateKey = config.get<string>('FIREBASE_PRIVATE_KEY');
+  useFactory: () => {
+    // ファイルパスの候補（優先順位順）
+    const possiblePaths = [
+      '/opt/render/project/src/backend/firebase-auth.json', // Render環境
+      path.join(process.cwd(), 'firebase-auth.json'), // ルート直下
+      path.join(__dirname, '../../firebase-auth.json'), // backendディレクトリ直下
+    ];
 
-    // デバッグ用ログ
-    console.log('[Firebase Provider] 環境変数の読み込み確認:');
-    console.log('- FIREBASE_PROJECT_ID:', projectId ? '✓ 設定済み' : '✗ 未設定');
-    console.log('- FIREBASE_CLIENT_EMAIL:', clientEmail ? '✓ 設定済み' : '✗ 未設定');
-    console.log('- FIREBASE_PRIVATE_KEY:', privateKey ? '✓ 設定済み (長さ: ' + privateKey.length + ')' : '✗ 未設定');
+    let firebaseAuthPath: string | null = null;
 
-    // 値が無い場合はエラーログを出力
-    if (!projectId || !clientEmail || !privateKey) {
-      console.error('[Firebase Provider] Firebase環境変数が不足しています。.envファイルを確認してください。');
+    // 存在するファイルパスを探す
+    for (const filePath of possiblePaths) {
+      if (fs.existsSync(filePath)) {
+        firebaseAuthPath = filePath;
+        console.log('[Firebase Provider] Firebase認証ファイルを発見:', filePath);
+        break;
+      }
+    }
+
+    if (!firebaseAuthPath) {
+      console.error('[Firebase Provider] firebase-auth.json が見つかりません。以下のパスを確認してください:');
+      possiblePaths.forEach(p => console.error('  -', p));
       console.warn('[Firebase Provider] ダミー初期化を行います（トークン検証は失敗します）');
       return admin.initializeApp();
     }
 
     try {
-      // 改行コードを正しく処理
-      const formattedPrivateKey = privateKey?.replace(/\\n/g, '\n');
-      
       console.log('[Firebase Provider] Firebase Admin SDK を初期化中...');
-      console.log('- Project ID:', projectId);
-      console.log('- Client Email:', clientEmail);
-      console.log('- Private Key length:', formattedPrivateKey?.length);
-      console.log('- Private Key starts with:', formattedPrivateKey?.substring(0, 30));
+      console.log('- 認証ファイル:', firebaseAuthPath);
       
       const app = admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey: formattedPrivateKey,
-        }),
+        credential: admin.credential.cert(firebaseAuthPath),
       });
 
       console.log('[Firebase Provider] ✓ Firebase Admin SDK の初期化に成功しました');
