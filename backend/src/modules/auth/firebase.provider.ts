@@ -9,7 +9,10 @@ export const FirebaseAdminProvider: Provider = {
   provide: FIREBASE_ADMIN,
   useFactory: () => {
     try {
+      console.log('[Firebase Provider] ========================================');
       console.log('[Firebase Provider] Firebase Admin SDK を初期化中...');
+      console.log('[Firebase Provider] process.cwd():', process.cwd());
+      console.log('[Firebase Provider] __dirname:', __dirname);
       
       let serviceAccountJson: any = null;
       
@@ -20,8 +23,8 @@ export const FirebaseAdminProvider: Provider = {
       
       // デバッグ: 環境変数の設定状況を確認
       console.log('[Firebase Provider] 環境変数の確認:');
-      console.log('  FIREBASE_PROJECT_ID:', projectId ? '✓' : '✗');
-      console.log('  FIREBASE_CLIENT_EMAIL:', clientEmail ? '✓' : '✗');
+      console.log('  FIREBASE_PROJECT_ID:', projectId ? '✓ (' + projectId + ')' : '✗');
+      console.log('  FIREBASE_CLIENT_EMAIL:', clientEmail ? '✓ (' + clientEmail + ')' : '✗');
       console.log('  FIREBASE_PRIVATE_KEY:', privateKey ? '✓ (' + privateKey.length + '文字)' : '✗');
       
       if (projectId && clientEmail && privateKey) {

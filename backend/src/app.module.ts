@@ -24,8 +24,10 @@ import { UsersModule } from './modules/users/users.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
+        console.log('[AppModule] TypeORM設定を初期化中...');
         const nodeEnv = config.get<string>('NODE_ENV') || 'development';
         const isDevelopment = nodeEnv !== 'production';
+        console.log('[AppModule] NODE_ENV:', nodeEnv, 'isDevelopment:', isDevelopment);
         
         // 環境変数の取得（DB_USERNAME/DB_PASSWORDもサポート）
         const dbHost = config.get<string>('DB_HOST') || (isDevelopment ? 'localhost' : undefined);
@@ -34,19 +36,17 @@ import { UsersModule } from './modules/users/users.module';
         const dbPass = config.get<string>('DB_PASS') || config.get<string>('DB_PASSWORD') || (isDevelopment ? '' : undefined);
         const dbName = config.get<string>('DB_NAME') || config.get<string>('DB_DATABASE') || (isDevelopment ? 'transparency_platform' : undefined);
         
-        // デバッグ: 環境変数の読み込み状況を確認
-        if (isDevelopment) {
-          console.log('[AppModule] 環境変数の読み込み状況:');
-          console.log('  DB_HOST:', config.get<string>('DB_HOST') ? '✓' : '✗');
-          console.log('  DB_USER:', config.get<string>('DB_USER') ? '✓' : '✗', 'DB_USERNAME:', config.get<string>('DB_USERNAME') ? '✓' : '✗');
-          console.log('  DB_PASS:', config.get<string>('DB_PASS') ? '✓' : '✗', 'DB_PASSWORD:', config.get<string>('DB_PASSWORD') ? '✓' : '✗');
-          console.log('  DB_NAME:', config.get<string>('DB_NAME') ? '✓' : '✗', 'DB_DATABASE:', config.get<string>('DB_DATABASE') ? '✓' : '✗');
-          console.log('  使用する値:');
-          console.log('    host:', dbHost);
-          console.log('    user:', dbUser);
-          console.log('    password:', dbPass ? '***' : '(空)');
-          console.log('    database:', dbName);
-        }
+        // デバッグ: 環境変数の読み込み状況を確認（本番環境でも表示）
+        console.log('[AppModule] 環境変数の読み込み状況:');
+        console.log('  DB_HOST:', config.get<string>('DB_HOST') ? '✓ (' + config.get<string>('DB_HOST') + ')' : '✗');
+        console.log('  DB_USER:', config.get<string>('DB_USER') ? '✓' : '✗', 'DB_USERNAME:', config.get<string>('DB_USERNAME') ? '✓' : '✗');
+        console.log('  DB_PASS:', config.get<string>('DB_PASS') ? '✓' : '✗', 'DB_PASSWORD:', config.get<string>('DB_PASSWORD') ? '✓' : '✗');
+        console.log('  DB_NAME:', config.get<string>('DB_NAME') ? '✓' : '✗', 'DB_DATABASE:', config.get<string>('DB_DATABASE') ? '✓' : '✗');
+        console.log('  使用する値:');
+        console.log('    host:', dbHost);
+        console.log('    user:', dbUser);
+        console.log('    password:', dbPass ? '***' : '(空)');
+        console.log('    database:', dbName);
         
         // 本番環境で必須環境変数が設定されていない場合はエラー
         if (!isDevelopment) {
@@ -75,8 +75,16 @@ import { UsersModule } from './modules/users/users.module';
         const databaseUrl = config.get<string>('DATABASE_URL');
         console.log('[AppModule] DATABASE_URL確認:', databaseUrl ? '設定されています (' + databaseUrl.substring(0, 30) + '...)' : '設定されていません');
         
-        if (databaseUrl) {
+        // 環境変数から直接取得も試みる（ConfigServiceが読み込めない場合のフォールバック）
+        const databaseUrlDirect = process.env.DATABASE_URL;
+        if (!databaseUrl && databaseUrlDirect) {
+          console.log('[AppModule] ConfigServiceからDATABASE_URLが取得できませんでしたが、process.envから取得しました');
+        }
+        const finalDatabaseUrl = databaseUrl || databaseUrlDirect;
+        
+        if (finalDatabaseUrl) {
           console.log('[AppModule] DATABASE_URLが設定されています。パースを試みます...');
+          console.log('[AppModule] DATABASE_URL先頭50文字:', finalDatabaseUrl.substring(0, 50));
           
           // DATABASE_URLから接続情報を抽出
           // postgresql://user:pass@host:port/dbname または postgresql://user:pass@host/dbname
@@ -89,7 +97,9 @@ import { UsersModule } from './modules/users/users.module';
           
           try {
             // URL.parseを使用してより確実にパース
-            const url = new URL(databaseUrl);
+            // postgresql:// を postgres:// に変換してからパース（URLクラスがpostgresqlを認識しない場合があるため）
+            const normalizedUrl = finalDatabaseUrl.replace(/^postgresql:\/\//, 'postgres://');
+            const url = new URL(normalizedUrl);
             urlUser = decodeURIComponent(url.username);
             urlPass = decodeURIComponent(url.password);
             urlHost = url.hostname;
@@ -127,26 +137,35 @@ import { UsersModule } from './modules/users/users.module';
             };
           } catch (parseError) {
             console.error('[AppModule] DATABASE_URLのパースに失敗しました:', parseError instanceof Error ? parseError.message : String(parseError));
-            console.error('[AppModule] DATABASE_URL形式を確認してください:', databaseUrl.substring(0, 80) + '...');
-            console.error('[AppModule] DATABASE_URL全体の長さ:', databaseUrl.length);
+            console.error('[AppModule] DATABASE_URL形式を確認してください:', finalDatabaseUrl.substring(0, 80) + '...');
+            console.error('[AppModule] DATABASE_URL全体の長さ:', finalDatabaseUrl.length);
             
             // フォールバック: 正規表現でパースを試みる
             console.log('[AppModule] 正規表現によるフォールバックパースを試みます...');
-            const urlMatch = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:\/]+)(?::(\d+))?\/(.+)/);
+            const urlMatch = finalDatabaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:\/]+)(?::(\d+))?\/(.+)/);
             if (urlMatch) {
               const [, fallbackUser, fallbackPass, fallbackHost, fallbackPort, fallbackDb] = urlMatch;
               const fallbackPortNum = fallbackPort ? parseInt(fallbackPort, 10) : 5432;
               
-              // パスワードのデコードを試みる
+              // パスワードのデコードを試みる（複数回デコードが必要な場合がある）
               let decodedPassword = fallbackPass;
               try {
+                // 一度デコードして、まだエンコードされている場合は再度デコード
                 decodedPassword = decodeURIComponent(fallbackPass);
+                if (decodedPassword.includes('%')) {
+                  decodedPassword = decodeURIComponent(decodedPassword);
+                }
               } catch (e) {
                 // URLエンコードされていない場合はそのまま使用
                 decodedPassword = fallbackPass;
               }
               
-              console.log('[AppModule] フォールバックパース成功');
+              console.log('[AppModule] フォールバックパース成功:');
+              console.log('  host:', fallbackHost);
+              console.log('  port:', fallbackPortNum);
+              console.log('  user:', fallbackUser);
+              console.log('  database:', fallbackDb);
+              console.log('  password length:', decodedPassword.length);
               
               return {
                 type: 'postgres',
@@ -164,6 +183,8 @@ import { UsersModule } from './modules/users/users.module';
                 dropSchema: false,
                 migrationsRun: false,
               };
+            } else {
+              console.error('[AppModule] フォールバックパースも失敗しました');
             }
           }
         }
