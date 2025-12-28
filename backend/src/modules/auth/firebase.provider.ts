@@ -27,20 +27,13 @@ export const FirebaseAdminProvider: Provider = {
 
     try {
       // 改行コードを正しく処理
-      // Renderなどの環境変数では、\nが文字列として渡される可能性がある
-      // パターン1: \\n を \n に変換（エスケープされた改行）
-      // パターン2: 万が一、鍵が1行に繋がって読み込まれてしまった場合に備え、
-      // Base64文字（\w = [A-Za-z0-9_]）や +, /, = の前のスペースを改行に変換
-      const formattedPrivateKey = privateKey
-        ?.replace(/\\n/g, '\n')
-        .replace(/\s(?=[\w/+=])/g, '\n')
-        .trim() || privateKey;
+      const formattedPrivateKey = privateKey?.replace(/\\n/g, '\n');
       
       console.log('[Firebase Provider] Firebase Admin SDK を初期化中...');
       console.log('- Project ID:', projectId);
       console.log('- Client Email:', clientEmail);
-      console.log('- Private Key length:', formattedPrivateKey.length);
-      console.log('- Private Key starts with:', formattedPrivateKey.substring(0, 30));
+      console.log('- Private Key length:', formattedPrivateKey?.length);
+      console.log('- Private Key starts with:', formattedPrivateKey?.substring(0, 30));
       
       const app = admin.initializeApp({
         credential: admin.credential.cert({
