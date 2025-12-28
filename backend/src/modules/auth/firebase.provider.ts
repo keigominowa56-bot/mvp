@@ -33,13 +33,40 @@ export const FirebaseAdminProvider: Provider = {
       // パターン1: \\n を \n に変換（エスケープされた改行）
       formattedPrivateKey = formattedPrivateKey.replace(/\\n/g, '\n');
       
-      // パターン2: 実際の改行が含まれている場合はそのまま使用
-      // パターン3: BEGIN/ENDの前後で改行が不足している場合は追加
-      if (!formattedPrivateKey.includes('\n')) {
-        // BEGIN PRIVATE KEYの後に改行がない場合
-        formattedPrivateKey = formattedPrivateKey.replace(/-----BEGIN PRIVATE KEY-----/g, '-----BEGIN PRIVATE KEY-----\n');
-        // END PRIVATE KEYの前に改行がない場合
-        formattedPrivateKey = formattedPrivateKey.replace(/-----END PRIVATE KEY-----/g, '\n-----END PRIVATE KEY-----');
+      // パターン2: BEGIN/ENDの間のBase64部分を抽出して正しくフォーマット
+      const beginMarker = '-----BEGIN PRIVATE KEY-----';
+      const endMarker = '-----END PRIVATE KEY-----';
+      
+      const beginIndex = formattedPrivateKey.indexOf(beginMarker);
+      const endIndex = formattedPrivateKey.indexOf(endMarker);
+      
+      if (beginIndex !== -1 && endIndex !== -1) {
+        const beforeBegin = formattedPrivateKey.substring(0, beginIndex).trim();
+        const afterEnd = formattedPrivateKey.substring(endIndex + endMarker.length).trim();
+        
+        // BEGINとENDの間の部分を抽出
+        const base64Content = formattedPrivateKey
+          .substring(beginIndex + beginMarker.length, endIndex)
+          .replace(/\s+/g, '') // すべての空白文字を削除
+          .trim();
+        
+        // Base64部分を64文字ごとに改行を挿入
+        const formattedBase64 = base64Content.match(/.{1,64}/g)?.join('\n') || base64Content;
+        
+        // 正しい形式に再構築
+        formattedPrivateKey = [
+          beforeBegin,
+          beginMarker,
+          formattedBase64,
+          endMarker,
+          afterEnd
+        ].filter(Boolean).join('\n');
+      } else {
+        // BEGIN/ENDが見つからない場合のフォールバック処理
+        if (!formattedPrivateKey.includes('\n')) {
+          formattedPrivateKey = formattedPrivateKey.replace(/-----BEGIN PRIVATE KEY-----/g, '-----BEGIN PRIVATE KEY-----\n');
+          formattedPrivateKey = formattedPrivateKey.replace(/-----END PRIVATE KEY-----/g, '\n-----END PRIVATE KEY-----');
+        }
       }
       
       // 先頭と末尾の空白・改行を削除
