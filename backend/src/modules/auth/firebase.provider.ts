@@ -58,7 +58,12 @@ export const FirebaseAdminProvider: Provider = {
           const afterEnd = privateKey.substring(endIndex);
           
           // Base64部分の空白・改行をすべて削除
-          const cleanBase64 = base64Part.replace(/\s+/g, '');
+          const cleanBase64 = base64Part.replace(/\s+/g, '').trim();
+          
+          // Base64文字列の長さを確認（4の倍数である必要がある）
+          console.log('[Firebase Provider] Base64部分の長さ:', cleanBase64.length);
+          console.log('[Firebase Provider] Base64部分の先頭:', cleanBase64.substring(0, 20));
+          console.log('[Firebase Provider] Base64部分の末尾:', cleanBase64.substring(cleanBase64.length - 20));
           
           // Base64部分を64文字ごとに改行を挿入
           const formattedBase64 = cleanBase64.match(/.{1,64}/g)?.join('\n') || cleanBase64;
