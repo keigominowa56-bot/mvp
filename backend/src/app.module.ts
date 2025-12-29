@@ -202,11 +202,29 @@ import { HealthModule } from './health/health.module';
           }
         }
         
-        // DATABASE_URLがない場合は個別設定を使用（MySQLまたはPostgreSQL）
+        // DATABASE_URLがない場合は個別設定を使用（MySQL、PostgreSQL、またはSQLite）
         const dbType = config.get<string>('DB_TYPE') || 'mysql'; // デフォルトはMySQL
         
         console.log('[AppModule] DATABASE_URLが設定されていないか、パースに失敗しました。個別設定を使用します:');
         console.log('  DB_TYPE:', dbType);
+        
+        // SQLite (better-sqlite3) の場合
+        if (dbType === 'better-sqlite3' || dbType === 'sqlite') {
+          const dbPath = config.get<string>('DB_PATH') || config.get<string>('DB_NAME') || 'database.sqlite';
+          console.log('  database path:', dbPath);
+          
+          return {
+            type: 'better-sqlite3',
+            database: dbPath,
+            entities: [__dirname + '/entities/**/*.js', __dirname + '/modules/**/entities/**/*.js'],
+            synchronize: synchronize,
+            logging: isDevelopment,
+            dropSchema: false,
+            migrationsRun: false,
+          };
+        }
+        
+        // MySQL または PostgreSQL の場合
         console.log('  host:', dbHost);
         console.log('  port:', dbPort);
         console.log('  user:', dbUser);

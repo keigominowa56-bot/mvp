@@ -36,4 +36,32 @@ export async function verifyPhone(email: string, code: string) {
   return unwrap(res);
 }
 
-export { createReport, verifyEmail, sendPhoneCode, verifyPhone }
+export async function likeComment(commentId: string) {
+  const res = await apiFetchWithAuth(`/api/comments/${commentId}/like`, {
+    method: 'POST',
+  });
+  return unwrap(res);
+}
+
+export async function unlikeComment(commentId: string) {
+  const res = await apiFetchWithAuth(`/api/comments/${commentId}/like`, {
+    method: 'DELETE',
+  });
+  return unwrap(res);
+}
+
+export async function isCommentLiked(commentId: string): Promise<{ liked: boolean }> {
+  const res = await apiFetchWithAuth(`/api/comments/${commentId}/is-liked`, {
+    method: 'GET',
+  });
+  return unwrap<{ liked: boolean }>(res);
+}
+
+export async function getCommentLikesCount(commentId: string): Promise<{ count: number }> {
+  const res = await apiFetchWithAuth(`/api/comments/${commentId}/likes-count`, {
+    method: 'GET',
+  });
+  return unwrap<{ count: number }>(res);
+}
+
+export { createReport, verifyEmail, sendPhoneCode, verifyPhone, likeComment, unlikeComment, isCommentLiked, getCommentLikesCount }
