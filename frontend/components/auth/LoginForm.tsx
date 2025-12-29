@@ -4,23 +4,47 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '../../lib/api';
 import toast from 'react-hot-toast'; // トースト表示用にインポート
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth(); 
+  const { loginWithToken } = useAuth(); 
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // 💡 login関数を呼び出し、成功したらリダイレクト
-      await login(email, password); 
+      // ログインAPIを呼び出してトークンを取得
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'ログインに失敗しました');
+      }
+      
+      const data = await res.json();
+      const token = data.token || data.accessToken;
+      
+      if (!token) {
+        throw new Error('トークンが取得できませんでした');
+      }
+      
+      // トークンを使ってログイン
+      await loginWithToken(token);
+      toast.success('ログインしました');
       router.push('/');
       
-    } catch (error) {
-      // 💡 AuthContext側でトーストが表示されるが、念のためコンソールにエラー出力
+    } catch (error: any) {
+      // 💡 エラーメッセージを表示
+      toast.error(error.message || 'ログインに失敗しました');
       console.error("Login attempt failed:", error); 
     }
   };
