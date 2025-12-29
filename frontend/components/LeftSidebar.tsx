@@ -117,5 +117,3 @@ export function LeftSidebar() {
     </aside>
   );
 }
-
-export { LeftSidebar }
