@@ -36,14 +36,15 @@ export default function EngagementPage() {
       return;
     }
 
-    fetch('http://localhost:4000/api/auth/me', {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    fetch(`${apiBase}/api/auth/me`, {
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
     })
       .then(res => res.json())
       .then(data => setUser(data));
     
-    fetch('http://localhost:4000/api/admin/posts/analytics', {
+    fetch(`${apiBase}/api/admin/posts/analytics`, {
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
     })

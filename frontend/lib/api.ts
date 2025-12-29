@@ -1,6 +1,6 @@
 // Re-generated complete API client (named exports only; explicit export list)
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
 
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});

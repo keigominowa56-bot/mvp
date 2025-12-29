@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
 
 export default function SendNotificationPage() {
   const [title, setTitle] = useState('');

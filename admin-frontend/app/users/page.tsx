@@ -20,7 +20,8 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    fetch('http://localhost:4000/api/admin/users', {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    fetch(`${apiBase}/api/admin/users`, {
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
     })
@@ -34,7 +35,8 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    fetch(`http://localhost:4000/api/admin/users/${id}/approve`, {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    fetch(`${apiBase}/api/admin/users/${id}/approve`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
@@ -49,7 +51,8 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    fetch(`http://localhost:4000/api/admin/users/${id}/reject`, {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    fetch(`${apiBase}/api/admin/users/${id}/reject`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
@@ -64,7 +67,8 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    fetch(`http://localhost:4000/api/admin/users/${id}/allow-engagement`, {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    fetch(`${apiBase}/api/admin/users/${id}/allow-engagement`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
@@ -83,7 +87,8 @@ export default function UserManagePage() {
       return;
     }
     if (!confirm('投稿分析の許可を解除しますか？')) return;
-    fetch(`http://localhost:4000/api/admin/users/${id}/revoke-engagement`, {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    fetch(`${apiBase}/api/admin/users/${id}/revoke-engagement`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'

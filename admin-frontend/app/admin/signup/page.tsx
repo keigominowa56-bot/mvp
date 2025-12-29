@@ -10,9 +10,10 @@ export default function AdminSignupPage() {
   const [loading, setLoading] = useState(false);
   
   // デバッグ：環境変数を確認
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+  const apiUrl = `${apiBase}/api`;
   console.log('🔧 Environment check:');
-  console.log('  - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+  console.log('  - NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
   console.log('  - Resolved API URL:', apiUrl);
 
   async function onSubmit(e: React.FormEvent) {
@@ -36,14 +37,14 @@ export default function AdminSignupPage() {
       await sendEmailVerification(userCredential.user);
 
       // バックエンドに管理者登録
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-      const signupUrl = `${apiUrl}/auth/admin/signup`;
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+      const signupUrl = `${apiBase}/api/auth/admin/signup`;
       
       // デバッグ用：実際のリクエストURLをコンソールに出力
       console.log('🚀 ===== SIGNUP REQUEST =====');
       console.log('🚀 Sending request to:', signupUrl);
-      console.log('🚀 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-      console.log('🚀 Expected backend:', 'http://localhost:4000');
+      console.log('🚀 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+      console.log('🚀 Expected backend:', apiBase);
       console.log('🚀 ============================');
       
       const res = await fetch(signupUrl, {

@@ -7,7 +7,8 @@ export default function PoliticianSignupPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg('');
-    const res = await fetch('http://localhost:4000/api/auth/politician/signup', {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    const res = await fetch(`${apiBase}/api/auth/politician/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),

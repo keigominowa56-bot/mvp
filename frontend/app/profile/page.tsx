@@ -152,7 +152,7 @@ export default function ProfilePage() {
         return;
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/api/users/deactivate`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000'}/api/users/deactivate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -193,7 +193,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-4">
               {user.profileImageUrl ? (
                 <img 
-                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}${user.profileImageUrl}`} 
+                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000'}${user.profileImageUrl}`} 
                   alt="プロフィール画像" 
                   className="w-24 h-24 rounded-full object-cover border"
                   onError={(e) => {
@@ -356,7 +356,7 @@ export default function ProfilePage() {
                   }
                   
                   try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/api/media/upload`, {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000'}/api/media/upload`, {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${token}`,
@@ -372,7 +372,7 @@ export default function ProfilePage() {
                     const data = await res.json();
                     // アップロードされた画像のURLを設定（フルパス）
                     const imageUrl = data.url || data.path || '';
-                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}${imageUrl}`;
+                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000'}${imageUrl}`;
                     setFormData(prev => ({ ...prev, profileImageUrl: fullUrl }));
                     setSuccess('画像をアップロードしました');
                   } catch (err: any) {

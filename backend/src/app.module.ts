@@ -27,7 +27,17 @@ import { UsersModule } from './modules/users/users.module';
         console.log('[AppModule] TypeORM設定を初期化中...');
         const nodeEnv = config.get<string>('NODE_ENV') || 'development';
         const isDevelopment = nodeEnv !== 'production';
-        console.log('[AppModule] NODE_ENV:', nodeEnv, 'isDevelopment:', isDevelopment);
+        
+        // TYPEORM_SYNCHRONIZE環境変数を優先的にチェック
+        const typeormSynchronize = config.get<string>('TYPEORM_SYNCHRONIZE');
+        let synchronize: boolean;
+        if (typeormSynchronize !== undefined) {
+          synchronize = typeormSynchronize === 'true' || typeormSynchronize === '1';
+          console.log('[AppModule] TYPEORM_SYNCHRONIZE環境変数から取得:', synchronize);
+        } else {
+          synchronize = isDevelopment;
+          console.log('[AppModule] NODE_ENVから決定:', nodeEnv, 'synchronize:', synchronize);
+        }
         
         // 環境変数の取得（DB_USERNAME/DB_PASSWORDもサポート）
         const dbHost = config.get<string>('DB_HOST') || (isDevelopment ? 'localhost' : undefined);
@@ -127,7 +137,7 @@ import { UsersModule } from './modules/users/users.module';
               password: decodedPassword,
               database: urlDb,
               entities: [__dirname + '/entities/**/*.js', __dirname + '/modules/**/entities/**/*.js'],
-              synchronize: isDevelopment,
+              synchronize: synchronize,
               logging: isDevelopment,
               extra: {
                 connectionLimit: 10,
@@ -207,7 +217,7 @@ import { UsersModule } from './modules/users/users.module';
           password: dbPass || '', // 空文字列を明示的に設定
           database: dbName,
           entities: [__dirname + '/entities/**/*.js', __dirname + '/modules/**/entities/**/*.js'],
-          synchronize: isDevelopment,
+          synchronize: synchronize,
           logging: isDevelopment,
           extra: {
             connectionLimit: 10,
