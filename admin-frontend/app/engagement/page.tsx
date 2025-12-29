@@ -124,8 +124,10 @@ export default function EngagementPage() {
                   {Object.keys(selectedPost.analytics.ageGroups).length > 0 ? (
                     <>
                       {Object.entries(selectedPost.analytics.ageGroups).map(([age, count]) => {
-                        const total = Object.values((selectedPost.analytics as any)?.ageGroups || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0) as number;
-                        const percentage = total > 0 ? (((count as number) / total) * 100).toFixed(1) : "0";
+                        // 127行目付近：(a as any) + (b as any) で計算を強制
+                        const total = Object.values((selectedPost.analytics as any).ageGroups || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0);
+                        // 128行目付近：countをanyにキャストして計算
+                        const percentage = (total as number) > 0 ? (((count as any) / (total as number)) * 100).toFixed(1) : "0";
                         return (
                           <div key={age} className="mb-2">
                             <div className="flex justify-between text-sm mb-1">
