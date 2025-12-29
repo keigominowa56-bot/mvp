@@ -11,19 +11,19 @@ interface AuthGuardProps {
 }
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isLoggedIn, ready } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // 認証情報とローディングが完了した後
-    if (!loading && !isAuthenticated) {
+    if (ready && !isLoggedIn) {
       // ログインしていない場合、ログインページにリダイレクト
       router.replace('/login');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isLoggedIn, ready, router]);
 
   // ローディング中は何も表示しないか、ローディング画面を表示
-  if (loading) {
+  if (!ready) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
@@ -32,7 +32,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }
 
   // 認証済みの場合のみ子コンポーネントを表示
-  if (isAuthenticated) {
+  if (isLoggedIn) {
     return <>{children}</>;
   }
 
