@@ -8,6 +8,9 @@ services:
     ports:
       - "10000:10000"
     env_file: .env
+    environment:
+      - PORT=10000
+      - NODE_ENV=production
     depends_on:
       - db
     restart: always
@@ -23,6 +26,8 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: mvp_database_g0ic
+    ports:
+      - "5432:5432"
 
   frontend:
     build:
@@ -30,7 +35,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    env_file: ./frontend/.env.local
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://api.polimee.com:10000
     restart: always
@@ -43,7 +47,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
-    env_file: ./admin-frontend/.env.local
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://api.polimee.com:10000
     restart: always
