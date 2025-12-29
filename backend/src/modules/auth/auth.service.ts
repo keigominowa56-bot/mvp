@@ -132,7 +132,7 @@ export class AuthService {
       if (deletedUser) {
         // 退会済みユーザーを復活させる
         console.log('[Auth Service] 退会済みユーザーを復活:', deletedUser.id);
-        deletedUser.deletedAt = null;
+        (deletedUser as any).deletedAt = null;
         deletedUser.firebaseUid = firebaseUid;
         deletedUser.status = 'pending';
         if (email) {

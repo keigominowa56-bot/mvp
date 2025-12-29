@@ -102,7 +102,7 @@ export class UsersService {
 
   async reactivateUser(userId: string, firebaseUid: string): Promise<User> {
     const user = await this.findById(userId);
-    user.deletedAt = null;
+    (user as any).deletedAt = null;
     user.firebaseUid = firebaseUid;
     user.status = 'pending'; // 再登録時は承認待ち状態に
     return this.users.save(user);
