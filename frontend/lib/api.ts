@@ -537,3 +537,52 @@ export async function markNotificationRead(notificationId: string): Promise<void
     throw new Error(errorData.message || '既読処理に失敗しました');
   }
 }
+
+// Reactions API
+export type ReactionType = 'like' | 'agree' | 'disagree';
+
+export type ReactionsSummary = {
+  like: number;
+  agree: number;
+  disagree: number;
+};
+
+export async function reactionsSummary(targetId: string): Promise<ReactionsSummary> {
+  const res = await apiFetchWithAuth(`/api/reactions/summary?targetId=${targetId}`, {
+    method: 'GET',
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || 'リアクションサマリーの取得に失敗しました');
+  }
+  const data = await unwrap<ReactionsSummary>(res);
+  return data;
+}
+
+export async function myReaction(targetId: string): Promise<{ reaction: ReactionType | null }> {
+  const res = await apiFetchWithAuth(`/api/reactions/my?targetId=${targetId}`, {
+    method: 'GET',
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || '自分のリアクションの取得に失敗しました');
+  }
+  const data = await unwrap<{ reaction: ReactionType | null }>(res);
+  return data;
+}
+
+export async function toggleReaction(
+  targetId: string,
+  type: ReactionType,
+): Promise<{ reaction: ReactionType | null; summary: ReactionsSummary }> {
+  const res = await apiFetchWithAuth('/api/reactions', {
+    method: 'POST',
+    body: JSON.stringify({ targetId, type }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || 'リアクションの切り替えに失敗しました');
+  }
+  const data = await unwrap<{ reaction: ReactionType | null; summary: ReactionsSummary }>(res);
+  return data;
+}
