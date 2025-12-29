@@ -105,6 +105,89 @@ export async function fetchFeed(params?: {
   return unwrap<Post[]>(res);
 }
 
+export async function fetchPosts(): Promise<Post[]> {
+  const res = await apiFetchWithAuth('/api/posts', { method: 'GET' });
+  return unwrap<Post[]>(res);
+}
+
+export async function createPost(input: {
+  title?: string;
+  body?: string;
+  content?: string;
+  type?: string;
+  tags?: string[];
+  postCategory?: 'policy' | 'activity';
+  visibility?: 'public' | 'hidden';
+  regionPref?: string;
+  regionCity?: string;
+}): Promise<Post> {
+  // body と content の両方に対応（body を content にマッピング）
+  const payload: any = {
+    title: input.title || '',
+    content: input.content || input.body || '',
+    type: input.type || 'activity',
+  };
+  
+  // オプショナルなフィールドを追加
+  if (input.postCategory) {
+    payload.postCategory = input.postCategory;
+  }
+  if (input.visibility) {
+    payload.visibility = input.visibility;
+  }
+  if (input.regionPref) {
+    payload.regionPref = input.regionPref;
+  }
+  if (input.regionCity) {
+    payload.regionCity = input.regionCity;
+  }
+  
+  const res = await apiFetchWithAuth('/api/posts', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || '投稿作成に失敗しました');
+  }
+  
+  return unwrap<Post>(res);
+}
+
+export async function updatePost(id: string, input: {
+  title?: string;
+  body?: string;
+  tags?: string[];
+}): Promise<Post> {
+  const payload: any = {};
+  if (input.title !== undefined) payload.title = input.title;
+  if (input.body !== undefined) payload.body = input.body;
+  
+  const res = await apiFetchWithAuth(`/api/posts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || '投稿更新に失敗しました');
+  }
+  
+  return unwrap<Post>(res);
+}
+
+export async function deletePost(id: string): Promise<void> {
+  const res = await apiFetchWithAuth(`/api/posts/${id}`, {
+    method: 'DELETE',
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || '投稿削除に失敗しました');
+  }
+}
+
 export async function fetchComments(postId: string): Promise<Comment[]> {
   const res = await apiFetchWithAuth(`/api/posts/${postId}/comments`, { method: 'GET' });
   return unwrap<Comment[]>(res);
