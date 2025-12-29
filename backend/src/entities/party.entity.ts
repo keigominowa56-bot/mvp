@@ -5,7 +5,7 @@ export class Party {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 256 })
   name: string;
 
   @Column({ length: 16 })

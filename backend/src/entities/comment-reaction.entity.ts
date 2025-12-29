@@ -8,14 +8,14 @@ export class CommentReaction {
   id: string;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   commentId: string;
 
   @ManyToOne(() => Comment, (c) => c.reactions, { onDelete: 'CASCADE' })
   comment: Comment;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   userId: string;
 
   @Column({ length: 32 })

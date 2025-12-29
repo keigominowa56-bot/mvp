@@ -6,10 +6,10 @@ export class Reaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   targetId: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   userId: string;
 
   @Column({ type: 'varchar' })

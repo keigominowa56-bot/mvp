@@ -8,7 +8,7 @@ export class Notification {
   id: string;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
@@ -32,7 +32,7 @@ export class Notification {
   @Column({ type: 'text', nullable: true })
   commentContent: string | null; // コメント内容
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   readAt: Date | null;
 
   @CreateDateColumn()

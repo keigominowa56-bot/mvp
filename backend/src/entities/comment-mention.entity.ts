@@ -8,14 +8,14 @@ export class CommentMention {
   id: number;
 
   @Index()
-  @Column()
+  @Column({ type: 'int' })
   commentId: number;
 
   @ManyToOne(() => Comment, (c) => c.mentions, { onDelete: 'CASCADE' })
   comment: Comment;
 
   @Index()
-  @Column()
+  @Column({ type: 'int' })
   mentionedUserId: number;
 
   // User 参照は暫定的に外します

@@ -8,14 +8,14 @@ export class Follow {
   id: string;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   followerUserId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   follower: User;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   targetUserId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

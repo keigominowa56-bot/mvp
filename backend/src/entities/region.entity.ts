@@ -5,13 +5,13 @@ export class Region {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 256 })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 16 })
   prefectureCode: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 16 })
   cityCode: string;
 
   @CreateDateColumn()

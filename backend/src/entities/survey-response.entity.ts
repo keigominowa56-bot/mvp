@@ -9,14 +9,14 @@ export class SurveyResponse {
   id: string;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   surveyId: string;
 
   @ManyToOne(() => Survey, { onDelete: 'CASCADE' })
   survey: Survey;
 
   @Index()
-  @Column()
+  @Column({ type: 'uuid' })
   respondentUserId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
