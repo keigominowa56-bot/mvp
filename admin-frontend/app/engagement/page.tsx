@@ -151,11 +151,11 @@ export default function EngagementPage() {
                 
                 <div className="bg-gray-50 rounded p-4">
                   <h3 className="font-semibold mb-3">地域別</h3>
-                  {Object.keys(selectedPost.analytics.regions).length > 0 ? (
+                  {Object.keys((selectedPost.analytics as any)?.regions || {}).length > 0 ? (
                     <>
-                      {Object.entries(selectedPost.analytics.regions).map(([region, count]) => {
-                        const total = Object.values(selectedPost.analytics.regions).reduce((a, b) => a + b, 0);
-                        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                      {Object.entries((selectedPost.analytics as any)?.regions || {}).map(([region, count]) => {
+                        const total = Object.values((selectedPost.analytics as any)?.regions || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0);
+                        const percentage = (total as number) > 0 ? (((count as any) / (total as number)) * 100).toFixed(1) : "0";
                         return (
                           <div key={region} className="mb-2">
                             <div className="flex justify-between text-sm mb-1">
@@ -179,11 +179,11 @@ export default function EngagementPage() {
                 
                 <div className="bg-gray-50 rounded p-4">
                   <h3 className="font-semibold mb-3">支持政党別</h3>
-                  {Object.keys(selectedPost.analytics.parties).length > 0 ? (
+                  {Object.keys((selectedPost.analytics as any)?.parties || {}).length > 0 ? (
                     <>
-                      {Object.entries(selectedPost.analytics.parties).map(([party, count]) => {
-                        const total = Object.values(selectedPost.analytics.parties).reduce((a, b) => a + b, 0);
-                        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                      {Object.entries((selectedPost.analytics as any)?.parties || {}).map(([party, count]) => {
+                        const total = Object.values((selectedPost.analytics as any)?.parties || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0);
+                        const percentage = (total as number) > 0 ? (((count as any) / (total as number)) * 100).toFixed(1) : "0";
                         return (
                           <div key={party} className="mb-2">
                             <div className="flex justify-between text-sm mb-1">
