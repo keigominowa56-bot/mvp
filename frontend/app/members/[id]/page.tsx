@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import apiClient from '../../../lib/api';
+import { apiFetchWithAuth, unwrap } from '../../../lib/api';
 import { MapPin, Users, Briefcase, Link as LinkIcon, Twitter, Loader2, BookOpen, Clock, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -76,8 +76,11 @@ export default function MemberDetailPage() {
         setLoading(true);
         setError(null);
         // バックエンドの /members/[id] エンドポイントからデータを取得
-        const response = await apiClient.get<MemberDetail>(`/members/${memberId}`);
-        setMember(response.data);
+        const res = await apiFetchWithAuth(`/api/members/${memberId}`, {
+          method: 'GET',
+        });
+        const data = await unwrap<MemberDetail>(res);
+        setMember(data);
       } catch (err) {
         console.error(`議員ID: ${memberId} の詳細データの取得に失敗:`, err);
         setError('議員データの読み込みに失敗しました。IDまたはサーバーを確認してください。');

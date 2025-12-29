@@ -15,7 +15,7 @@ export function CommentWithMedia({ postId, token }: { postId: string; token: str
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
     const res = await fetch(`${apiBase}/api/posts/${postId}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.polimee.com:10000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
 
 type Report = {
   id: string;

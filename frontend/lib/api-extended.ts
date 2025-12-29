@@ -5,7 +5,7 @@ export async function createReport(
   targetType: 'post' | 'comment' | 'user',
   reason?: string,
 ) {
-  const res = await apiFetchWithAuth('/reports', {
+  const res = await apiFetchWithAuth('/api/reports', {
     method: 'POST',
     body: JSON.stringify({ targetId, targetType, reason: reason ?? '' }),
   });
@@ -13,19 +13,27 @@ export async function createReport(
 }
 
 export async function verifyEmail(token: string) {
-  const res = await apiFetchWithAuth('/auth/verify-email', {
+  const res = await apiFetchWithAuth('/api/auth/verify-email', {
     method: 'POST',
     body: JSON.stringify({ token }),
   });
   return unwrap(res);
 }
 
-export async function verifyPhone(code: string) {
-  const res = await apiFetchWithAuth('/auth/verify-phone', {
+export async function sendPhoneCode(email: string) {
+  const res = await apiFetchWithAuth('/api/auth/send-phone-code', {
     method: 'POST',
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ email }),
   });
   return unwrap(res);
 }
 
-export { createReport, verifyEmail, verifyPhone }
+export async function verifyPhone(email: string, code: string) {
+  const res = await apiFetchWithAuth('/api/auth/verify-phone', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  });
+  return unwrap(res);
+}
+
+export { createReport, verifyEmail, sendPhoneCode, verifyPhone }
