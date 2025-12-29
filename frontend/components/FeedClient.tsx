@@ -6,16 +6,16 @@ import PostCard from './PostCard';
 import PostComposerSWR from './PostComposerSWR';
 
 export default function FeedClient() {
-  const { posts, isLoading, error } = usePosts();
+  const { posts, loading, error } = usePosts();
 
   return (
     <div className="space-y-6">
       <PostComposerSWR />
       <h2 className="text-xl font-semibold">議員フィード（自動更新）</h2>
 
-      {isLoading && <p className="text-sm text-gray-500">読み込み中...</p>}
+      {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
       {error && <p className="text-sm text-red-600">取得エラーが発生しました</p>}
-      {!isLoading && posts.length === 0 && (
+      {!loading && posts.length === 0 && (
         <p className="text-sm text-gray-500">投稿がまだありません。</p>
       )}
 
