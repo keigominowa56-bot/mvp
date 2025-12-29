@@ -616,3 +616,60 @@ export async function fetchPostSegments(
   
   return unwrap<Segments>(res);
 }
+
+// API client object for components that expect axios-like API
+export const api = {
+  async post(url: string, data?: any) {
+    const res = await apiFetchWithAuth(url, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const error: any = new Error(errorData.message || 'リクエストに失敗しました');
+      error.response = { status: res.status, data: errorData };
+      throw error;
+    }
+    return { data: await res.json().catch(() => ({})) };
+  },
+  
+  async patch(url: string, data?: any) {
+    const res = await apiFetchWithAuth(url, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const error: any = new Error(errorData.message || 'リクエストに失敗しました');
+      error.response = { status: res.status, data: errorData };
+      throw error;
+    }
+    return { data: await res.json().catch(() => ({})) };
+  },
+  
+  async delete(url: string) {
+    const res = await apiFetchWithAuth(url, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const error: any = new Error(errorData.message || 'リクエストに失敗しました');
+      error.response = { status: res.status, data: errorData };
+      throw error;
+    }
+    return { data: await res.json().catch(() => ({})) };
+  },
+  
+  async get(url: string) {
+    const res = await apiFetchWithAuth(url, {
+      method: 'GET',
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const error: any = new Error(errorData.message || 'リクエストに失敗しました');
+      error.response = { status: res.status, data: errorData };
+      throw error;
+    }
+    return { data: await res.json().catch(() => ({})) };
+  },
+};
