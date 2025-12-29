@@ -124,8 +124,8 @@ export default function EngagementPage() {
                   {Object.keys(selectedPost.analytics.ageGroups).length > 0 ? (
                     <>
                       {Object.entries(selectedPost.analytics.ageGroups).map(([age, count]) => {
-                        const total = Object.values((selectedPost.analytics as any).ageGroups).reduce((a: any, b: any) => a + b, 0);
-                        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                        const total = Object.values((selectedPost.analytics as any)?.ageGroups || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0) as number;
+                        const percentage = total > 0 ? (((count as number) / total) * 100).toFixed(1) : "0";
                         return (
                           <div key={age} className="mb-2">
                             <div className="flex justify-between text-sm mb-1">
