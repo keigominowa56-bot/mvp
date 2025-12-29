@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { usePosts } from '../lib/hooks/usePosts';
 
 export default function PostComposerSWR() {
-  const { addPost } = usePosts();
+  const { create } = usePosts();
   const [body, setBody] = useState('');
   const [imagesText, setImagesText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function PostComposerSWR() {
     setLoading(true);
     try {
       const images = imagesText.split(',').map(v => v.trim()).filter(Boolean);
-      await addPost(body, images);
+      await create({ title: '', body, tags: images });
       setBody('');
       setImagesText('');
       setDone(true);
