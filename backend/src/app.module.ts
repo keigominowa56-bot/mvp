@@ -30,13 +30,15 @@ import { UsersModule } from './modules/users/users.module';
         
         // TYPEORM_SYNCHRONIZE環境変数を優先的にチェック
         const typeormSynchronize = config.get<string>('TYPEORM_SYNCHRONIZE');
+        console.log('[AppModule] TYPEORM_SYNCHRONIZE環境変数の値:', typeormSynchronize, '(type:', typeof typeormSynchronize, ')');
+        console.log('[AppModule] process.env.TYPEORM_SYNCHRONIZE:', process.env.TYPEORM_SYNCHRONIZE);
         let synchronize: boolean;
-        if (typeormSynchronize !== undefined) {
+        if (typeormSynchronize !== undefined && typeormSynchronize !== null) {
           synchronize = typeormSynchronize === 'true' || typeormSynchronize === '1';
           console.log('[AppModule] TYPEORM_SYNCHRONIZE環境変数から取得:', synchronize);
         } else {
           synchronize = isDevelopment;
-          console.log('[AppModule] NODE_ENVから決定:', nodeEnv, 'synchronize:', synchronize);
+          console.log('[AppModule] TYPEORM_SYNCHRONIZEが設定されていないため、NODE_ENVから決定:', nodeEnv, 'synchronize:', synchronize);
         }
         
         // 環境変数の取得（DB_USERNAME/DB_PASSWORDもサポート）
