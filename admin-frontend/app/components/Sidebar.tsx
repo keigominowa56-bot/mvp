@@ -157,7 +157,7 @@ export default function Sidebar() {
               議員ログイン
             </Link>
             {/* politicianログイン時は運営ログインボタンを非表示 */}
-            {user?.role !== 'politician' && (
+            {(user as any)?.role !== 'politician' && (
               <Link href="/admin/login" className="block hover:bg-gray-700 rounded p-2 text-sm">
                 運営ログイン
               </Link>

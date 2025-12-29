@@ -14,7 +14,7 @@ export class Notification {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column({ type: 'enum', enum: NotificationType })
+  @Column({ type: 'text' })
   type: NotificationType;
 
   @Column({ length: 256 })

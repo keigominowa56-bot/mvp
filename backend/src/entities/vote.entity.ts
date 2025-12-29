@@ -20,7 +20,7 @@ export class Vote {
   @Column({ type: 'uuid' })
   voterUserId!: string;
 
-  @Column({ type: 'simple-enum', enum: VoteChoice })
+  @Column({ type: 'text' })
   choice!: VoteChoice;
 
   @ManyToOne(() => User, (user) => user.votes)

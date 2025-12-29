@@ -15,13 +15,13 @@ export class WalletTransaction {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column({ type: 'enum', enum: WalletTransactionType })
+  @Column({ type: 'text' })
   type: WalletTransactionType;
 
   @Column({ type: 'int' })
   amount: number; // JPY
 
-  @Column({ type: 'enum', enum: Currency, default: Currency.JPY })
+  @Column({ type: 'text', default: Currency.JPY })
   currency: Currency;
 
   @Column({ type: 'text', nullable: true })
