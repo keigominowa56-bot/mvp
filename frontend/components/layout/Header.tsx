@@ -4,11 +4,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { Me } from '../../lib/api';
 import { LogOut } from 'lucide-react'; 
 import toast from 'react-hot-toast'; // 💡 トーストをインポート
 
 export default function Header() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const router = useRouter(); 
 
   // ログアウト処理 (状態クリアとリダイレクト、トースト表示をすべて実行)
@@ -30,15 +31,15 @@ export default function Header() {
     <header className="fixed top-0 left-0 md:left-64 right-0 z-40 bg-white shadow-md p-4 flex justify-between items-center dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       
       <Link href="/" className="text-xl font-semibold text-blue-700 dark:text-white transition-colors">
-        {isAuthenticated ? 'ダッシュボード' : '透明化プラットフォーム'}
+        {isLoggedIn ? 'ダッシュボード' : '透明化プラットフォーム'}
       </Link>
       
       <nav className="flex items-center space-x-4">
-        {isAuthenticated ? (
+        {isLoggedIn ? (
           <>
             {/* ユーザー名表示 */}
             <span className="text-gray-700 text-sm dark:text-gray-300 hidden sm:inline truncate max-w-[150px]">
-              ようこそ, {user?.name || user?.email}
+              ようこそ, {(user as Me)?.name || user?.email}
             </span>
             
             {/* ログアウトボタン */}
