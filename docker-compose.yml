@@ -1,25 +1,55 @@
 version: '3.8'
+
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: transparency_platform_mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: "MLLGNUjqLfra/ZpvCuBSt4miXmqX2d+25DDr2ieRAjY="
-      MYSQL_DATABASE: transparency_platform
-      MYSQL_USER: transparency_user
-      MYSQL_PASSWORD: "MLLGNUjqLfra/ZpvCuBSt4miXmqX2d+25DDr2ieRAjY="
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "3306:3306"
+      - "10000:10000"
+    env_file: .env
+    depends_on:
+      - db
+    restart: always
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
-    command: --default-authentication-plugin=mysql_native_password
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ./backend/uploads:/usr/src/app/uploads
+
+  db:
+    image: postgres:15
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: mvp_database_g0ic
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file: ./frontend/.env.local
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://api.polimee.com:10000
+    restart: always
+    depends_on:
+      - api
+
+  admin-frontend:
+    build:
+      context: ./admin-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file: ./admin-frontend/.env.local
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://api.polimee.com:10000
+    restart: always
+    depends_on:
+      - api
+
 volumes:
-  mysql_data:
+  db_data:
     driver: local
