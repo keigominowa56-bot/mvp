@@ -156,15 +156,19 @@ export default function EngagementPage() {
                       {Object.entries((selectedPost.analytics as any)?.regions || {}).map(([region, count]) => {
                         const total = Object.values((selectedPost.analytics as any)?.regions || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0);
                         const percentage = (total as number) > 0 ? (((count as any) / (total as number)) * 100).toFixed(1) : "0";
+                        
+                        // 表示用に型を確定させる
+                        const displayCount = count as number;
+
                         return (
                           <div key={region} className="mb-2">
                             <div className="flex justify-between text-sm mb-1">
                               <span>{region}</span>
-                              <span className="font-semibold">{count}人 ({percentage}%)</span>
+                              <span className="font-semibold">{displayCount}人 ({percentage}%)</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
-                                className="bg-green-600 h-2 rounded-full"
+                                className="bg-green-500 h-2 rounded-full"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
