@@ -24,8 +24,15 @@ export default function FeedClient() {
           <PostCard
             key={p.id}
             id={p.id}
-            body={p.body}
-            media={p.media}
+            body={p.content}
+            media={
+              p.imageUrl || p.videoUrl
+                ? {
+                    images: p.imageUrl ? [p.imageUrl] : undefined,
+                    video: p.videoUrl,
+                  }
+                : null
+            }
             createdAt={p.createdAt}
           />
         ))}
