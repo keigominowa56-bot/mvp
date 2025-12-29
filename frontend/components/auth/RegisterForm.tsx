@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '../../lib/api';
 import toast from 'react-hot-toast';
 
 const initialFormData = {
@@ -13,12 +13,12 @@ const initialFormData = {
   phoneNumber: '', 
   age: '',         
   prefecture: '',  
-  city: '',        
+  city: '',
+  name: '', // 名前フィールドを追加
 };
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState(initialFormData);
-  const { register } = useAuth();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -33,15 +33,41 @@ export default function RegisterForm() {
       return;
     }
 
+    if (!formData.name) {
+      toast.error('名前を入力してください。');
+      return;
+    }
+
     try {
-      // 💡 AuthContextのregister関数を呼び出し、登録
-      await register(formData); 
+      // 登録APIを呼び出し
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          age: parseInt(formData.age, 10),
+          addressPref: formData.prefecture,
+          addressCity: formData.city,
+          phone: formData.phoneNumber || undefined,
+        }),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || '登録に失敗しました');
+      }
+      
+      toast.success('登録が完了しました。ログインページに移動します。');
       
       // 成功したらログインページへ
       router.push('/login');
 
-    } catch (error) {
-      const errorMessage = (error as Error).message || '登録に失敗しました。';
+    } catch (error: any) {
+      const errorMessage = error.message || '登録に失敗しました。';
       toast.error(errorMessage);
     }
   };
@@ -52,6 +78,10 @@ export default function RegisterForm() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* === 認証情報 === */}
+        <div className="md:col-span-2">
+          <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="name">名前</label>
+          <input className="shadow border rounded w-full py-2 px-3 text-gray-700" id="name" type="text" name="name" value={formData.name} onChange={handleChange} required />
+        </div>
         <div className="md:col-span-2">
           <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="email">メールアドレス</label>
           <input className="shadow border rounded w-full py-2 px-3 text-gray-700" id="email" type="email" name="email" value={formData.email} onChange={handleChange} required />
@@ -68,7 +98,7 @@ export default function RegisterForm() {
         {/* === 本人確認情報 === */}
         <div className="col-span-1">
           <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="phoneNumber">電話番号</label>
-          <input className="shadow border rounded w-full py-2 px-3 text-gray-700" id="phoneNumber" type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
+          <input className="shadow border rounded w-full py-2 px-3 text-gray-700" id="phoneNumber" type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />
         </div>
         <div className="col-span-1">
           <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="age">年齢</label>
