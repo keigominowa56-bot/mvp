@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -92,6 +93,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @Column({ nullable: true })
-  deletedAt!: Date | null; // 退会日時（論理削除）
+  @DeleteDateColumn()
+  deletedAt?: Date; // 退会日時（論理削除）
 }

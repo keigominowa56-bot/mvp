@@ -51,7 +51,7 @@ export function LeftSidebar() {
           // エラー時はユーザー情報のみを使用
           setProfile({
             id: user.id,
-            name: user.name,
+            name: (user as any).displayName || 'ユーザー',
             party: undefined,
             district: undefined,
           });

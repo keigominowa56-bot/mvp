@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -55,6 +56,6 @@ export class Post {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @Column({ nullable: true })
-  deletedAt!: Date | null;
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }
