@@ -4,7 +4,7 @@ import CommentsSection from './CommentsSection';
 
 type Media = { images?: string[]; video?: string } | null;
 export type PostProps = {
-  id: number;
+  id: string;
   body: string;
   media?: Media;
   createdAt: string;
@@ -33,7 +33,7 @@ export default function PostCard({ id, body, media, createdAt }: PostProps) {
       )}
 
       <div className="mt-4">
-        <ReactionButtons postId={id} />
+        <ReactionButtons targetId={id} />
       </div>
 
       <CommentsSection postId={id} />
