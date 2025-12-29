@@ -43,5 +43,3 @@ export function RightSidebarFilters() {
     </aside>
   );
 }
-
-export { RightSidebarFilters }
