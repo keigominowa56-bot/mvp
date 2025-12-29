@@ -185,18 +185,23 @@ export default function EngagementPage() {
                   <h3 className="font-semibold mb-3">支持政党別</h3>
                   {Object.keys((selectedPost.analytics as any)?.parties || {}).length > 0 ? (
                     <>
+                      {/* 支持政党別 (Supported Parties) の修正箇所 */}
                       {Object.entries((selectedPost.analytics as any)?.parties || {}).map(([party, count]) => {
                         const total = Object.values((selectedPost.analytics as any)?.parties || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0);
                         const percentage = (total as number) > 0 ? (((count as any) / (total as number)) * 100).toFixed(1) : "0";
+                        
+                        // 表示用に型を確定させる (ここが重要)
+                        const displayCount = count as number;
+
                         return (
                           <div key={party} className="mb-2">
                             <div className="flex justify-between text-sm mb-1">
                               <span>{party}</span>
-                              <span className="font-semibold">{count}人 ({percentage}%)</span>
+                              <span className="font-semibold">{displayCount}人 ({percentage}%)</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
-                                className="bg-purple-600 h-2 rounded-full"
+                                className="bg-blue-500 h-2 rounded-full"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
