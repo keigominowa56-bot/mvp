@@ -154,12 +154,13 @@ export default function PoliticianPage({ params }: { params: Promise<{ id: strin
               <h3 className="text-md font-semibold mb-3">カテゴリ別内訳</h3>
               <div className="space-y-3">
                 {Object.entries(fundsByCategory).map(([category, amount]) => {
-                  const percentage = totalFunds > 0 ? ((amount / totalFunds) * 100).toFixed(1) : 0;
+                  const amountNum = amount as number;
+                  const percentage = totalFunds > 0 ? ((amountNum / totalFunds) * 100).toFixed(1) : 0;
                   return (
                     <div key={category} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">{category || 'その他'}</span>
-                        <span className="font-semibold">¥{amount.toLocaleString()} ({percentage}%)</span>
+                        <span className="font-semibold">¥{amountNum.toLocaleString()} ({percentage}%)</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3">
                         <div
