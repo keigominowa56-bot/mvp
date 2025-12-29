@@ -586,3 +586,33 @@ export async function toggleReaction(
   const data = await unwrap<{ reaction: ReactionType | null; summary: ReactionsSummary }>(res);
   return data;
 }
+
+// Segments API
+export type Segments = {
+  byPref: Record<string, { support: number; oppose: number; total: number }>;
+  byCity: Record<string, { support: number; oppose: number; total: number }>;
+  byAge: Record<string, { support: number; oppose: number; total: number }>;
+};
+
+export async function fetchPostSegments(
+  postId: string,
+  options?: { from?: string; to?: string },
+): Promise<Segments> {
+  const query = new URLSearchParams();
+  if (options?.from) query.set('from', options.from);
+  if (options?.to) query.set('to', options.to);
+  
+  const queryString = query.toString();
+  const url = `/api/posts/${postId}/segments${queryString ? `?${queryString}` : ''}`;
+  
+  const res = await apiFetchWithAuth(url, {
+    method: 'GET',
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || 'セグメントデータの取得に失敗しました');
+  }
+  
+  return unwrap<Segments>(res);
+}
