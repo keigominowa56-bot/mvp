@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { uploadMedia } from '../../lib/api-media';
+import { uploadMedia } from '../../../lib/api-media';
 
 export function CommentWithMedia({ postId, token }: { postId: string; token: string }) {
   const [text, setText] = useState('');
