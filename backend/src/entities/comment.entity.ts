@@ -41,7 +41,7 @@ export class Comment {
   @OneToMany(() => Comment, (comment) => comment.parent)
   children!: Comment[];
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
   @OneToMany(() => CommentReaction, (r) => r.comment)

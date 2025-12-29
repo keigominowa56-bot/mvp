@@ -43,11 +43,9 @@ export class FundingRecord {
   @Column({ type: 'varchar', length: 256, nullable: true })
   note!: string | null;
 
-  // 作成日時（PostgreSQL対応: datetimeではなくtimestamp with time zone）
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  // 更新日時
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }

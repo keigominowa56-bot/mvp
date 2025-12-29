@@ -36,9 +36,9 @@ export class PoliticianProfile {
   @Column({ type: 'json', nullable: true })
   extra!: Record<string, any> | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }

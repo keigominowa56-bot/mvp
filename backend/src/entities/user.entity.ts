@@ -86,12 +86,12 @@ export class User {
   @OneToMany(() => Vote, (vote) => vote.user)
   votes!: Vote[];
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ nullable: true })
   deletedAt!: Date | null; // 退会日時（論理削除）
 }

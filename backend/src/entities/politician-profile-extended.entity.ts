@@ -30,10 +30,10 @@ export class PoliticianProfileExtended {
   @Column({ type: 'json', nullable: true })
   socialLinks!: Record<string, string> | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
 

@@ -18,10 +18,10 @@ export class Survey {
   @Column({ type: 'json', nullable: true })
   targetCriteria: { regionIds?: string[]; ageGroups?: string[]; partyIds?: string[] } | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ nullable: true })
   startAt: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ nullable: true })
   endAt: Date | null;
 
   @CreateDateColumn()

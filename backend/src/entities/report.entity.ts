@@ -39,9 +39,9 @@ export class Report {
   @Column({ type: 'varchar', length: 512, nullable: true })
   adminNote!: string | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }

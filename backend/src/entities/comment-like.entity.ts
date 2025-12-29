@@ -14,7 +14,6 @@ export class CommentLike {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  // Postgres対応: datetime ではなく timestamp with time zone を使用
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 }

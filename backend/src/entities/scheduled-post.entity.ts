@@ -36,9 +36,9 @@ export class ScheduledPost {
   @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
   author!: User;
 
-  // 投稿日時（PostgreSQLでは datetime ではなく timestamp 系を使用）
+  // 投稿日時
   @Index()
-  @Column({ type: 'timestamp' })
+  @Column()
   scheduledAt!: Date;
 
   // 投稿内容関連
@@ -62,9 +62,9 @@ export class ScheduledPost {
   @Column({ type: 'varchar', length: 512, nullable: true })
   failureReason!: string | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }

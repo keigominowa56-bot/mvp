@@ -55,6 +55,6 @@ export class Post {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ nullable: true })
   deletedAt!: Date | null;
 }

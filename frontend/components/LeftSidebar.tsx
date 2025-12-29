@@ -33,7 +33,7 @@ export function LeftSidebar() {
             const data = await unwrap<any>(res);
             setProfile({
               id: user.id,
-              name: data.name || user.name,
+              name: data.name || (user as any).name || (user as any).displayName || 'ユーザー',
               party: data.party,
               district: data.district,
             });
@@ -41,7 +41,7 @@ export function LeftSidebar() {
             // プロフィールがまだ作成されていない場合は、ユーザー情報のみを使用
             setProfile({
               id: user.id,
-              name: user.name,
+              name: (user as any).name || (user as any).displayName || 'ユーザー',
               party: undefined,
               district: undefined,
             });
@@ -74,7 +74,7 @@ export function LeftSidebar() {
       // 一般ユーザーの場合は、ユーザー情報のみを使用
       setProfile({
         id: user.id,
-        name: user.name,
+        name: (user as any).name || (user as any).displayName || 'ユーザー',
         party: undefined,
         district: undefined,
       });

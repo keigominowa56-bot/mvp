@@ -27,6 +27,6 @@ export class AuditLog {
   @Column({ type: 'json', nullable: true })
   meta!: Record<string, any> | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 }

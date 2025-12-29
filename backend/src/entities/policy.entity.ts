@@ -21,14 +21,13 @@ export class Policy {
   @Column({ type: 'varchar', length: 32, default: 'draft' })
   status!: string;
 
-  // 修正: Postgresでは 'datetime' 非対応。'timestamp with time zone' を使用
   @Index()
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ nullable: true })
   publishedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
