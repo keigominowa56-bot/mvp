@@ -4,9 +4,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// 💡 正しいインポートパス: 相対パス + 拡張子 (.ts) を使用
-// Sidebarは /frontend/components/layout にいるので、2つ上の階層 (/frontend/) に上がり、/lib/navData.ts へ
-import { NavItem, mainNavItems, utilityNavItems, authNavItems } from '../../lib/navData.ts';
+// 💡 正しいインポートパス: 相対パスを使用（拡張子は不要）
+// Sidebarは /frontend/components/layout にいるので、2つ上の階層 (/frontend/) に上がり、/lib/navData へ
+import { NavItem, mainNavItems, utilityNavItems, authNavItems } from '../../lib/navData';
 import { User, LogIn, LogOut, Zap } from 'lucide-react';
 
 // 認証ロジックのモック（後で実装）
