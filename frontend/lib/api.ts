@@ -54,6 +54,7 @@ export type Post = {
   type: 'activity' | 'pledge' | 'question' | 'news';
   title: string;
   content: string;
+  body?: string; // contentのエイリアスとして使用可能
   createdAt: string;
   mediaIds?: string[];
   regionId?: string;
@@ -62,6 +63,8 @@ export type Post = {
   commentCount?: number;
   imageUrl?: string;
   videoUrl?: string;
+  postCategory?: 'policy' | 'activity';
+  visibility?: 'public' | 'hidden';
 };
 
 export type Comment = {
