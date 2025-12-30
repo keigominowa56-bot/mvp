@@ -1,3 +1,5 @@
+import { api } from './api';
+
 // ===== 管理: 通知送信 =====
 export async function adminSendNotification(input: {
   userId: string;
@@ -7,7 +9,7 @@ export async function adminSendNotification(input: {
   linkUrl?: string;
 }) {
   const res = await api.post('/notifications/send', input);
-  return unwrap(res);
+  return res.data;
 }
 
 export async function adminBulkSendNotifications(input: {
@@ -18,5 +20,5 @@ export async function adminBulkSendNotifications(input: {
   linkUrl?: string;
 }) {
   const res = await api.post('/notifications/bulk', input);
-  return unwrap(res);
+  return res.data;
 }
