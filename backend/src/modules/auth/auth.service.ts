@@ -43,22 +43,54 @@ export class AuthService {
   }
 
   async login(email: string, password: string, expectedRole: 'admin' | 'politician') {
-    const u = await this.users.findOne({ 
-      where: { email, deletedAt: IsNull() } as any, // 退会済みユーザーは除外
-    });
-    if (!u || !u.passwordHash) throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+    console.log(`[AuthService] Login attempt for email: ${email}, expectedRole: ${expectedRole}`);
     
-    // 退会済みユーザーのチェック（念のため）
-    if (u.deletedAt) {
-      throw new UnauthorizedException('このアカウントは退会済みです。再登録が必要です。');
+    try {
+      const u = await this.users.findOne({ 
+        where: { email, deletedAt: IsNull() } as any, // 退会済みユーザーは除外
+      });
+      
+      if (!u) {
+        console.log(`[AuthService] Login failed: User not found for email: ${email}`);
+        throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+      }
+      
+      if (!u.passwordHash) {
+        console.log(`[AuthService] Login failed: No password hash for user: ${email}, userId: ${u.id}`);
+        throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+      }
+      
+      // 退会済みユーザーのチェック（念のため）
+      if (u.deletedAt) {
+        console.log(`[AuthService] Login failed: User is deleted. email: ${email}, userId: ${u.id}, deletedAt: ${u.deletedAt}`);
+        throw new UnauthorizedException('このアカウントは退会済みです。再登録が必要です。');
+      }
+      
+      console.log(`[AuthService] User found: email=${email}, userId=${u.id}, role=${u.role}, expectedRole=${expectedRole}`);
+      
+      const passwordHash = u.passwordHash; // 型ナローイングのため変数に代入
+      const ok = await bcrypt.compare(password, passwordHash);
+      
+      if (!ok) {
+        console.log(`[AuthService] Login failed: Password mismatch for email: ${email}`);
+        throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+      }
+      
+      if (u.role !== expectedRole) {
+        console.log(`[AuthService] Login failed: Role mismatch. email: ${email}, userRole: ${u.role}, expectedRole: ${expectedRole}`);
+        throw new UnauthorizedException('アカウントの権限が正しくありません');
+      }
+      
+      const token = jwt.sign({ sub: u.id, role: u.role }, this.configService.get<string>('JWT_SECRET')!, { expiresIn: '7d' });
+      console.log(`[AuthService] Login successful: email=${email}, userId=${u.id}, role=${u.role}`);
+      return { token };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error(`[AuthService] Login error for email: ${email}, Error:`, error);
+      throw new UnauthorizedException('ログイン処理中にエラーが発生しました');
     }
-    
-    const passwordHash = u.passwordHash; // 型ナローイングのため変数に代入
-    const ok = await bcrypt.compare(password, passwordHash);
-    if (!ok) throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
-    if (u.role !== expectedRole) throw new UnauthorizedException('アカウントの権限が正しくありません');
-    const token = jwt.sign({ sub: u.id, role: u.role }, this.configService.get<string>('JWT_SECRET')!, { expiresIn: '7d' });
-    return { token };
   }
 
   // ユーザーIDの重複チェック

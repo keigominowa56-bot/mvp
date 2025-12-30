@@ -17,7 +17,15 @@ export class AuthController {
 
   @Post('admin/login')
   async adminLogin(@Body() body: { email: string; password: string }) {
-    return this.auth.login(body.email, body.password, 'admin');
+    console.log('[AuthController] POST /api/auth/admin/login called with email:', body.email);
+    try {
+      const result = await this.auth.login(body.email, body.password, 'admin');
+      console.log('[AuthController] Login successful for email:', body.email);
+      return result;
+    } catch (error) {
+      console.error('[AuthController] Login failed for email:', body.email, 'Error:', error);
+      throw error;
+    }
   }
 
   @Post('politician/signup')
