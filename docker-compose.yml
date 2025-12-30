@@ -1,12 +1,32 @@
 version: '3.8'
 
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      # SSL化後は以下のポートも開放
+      # - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./backend/uploads:/usr/src/app/uploads:ro
+      - certbot-www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - api
+      - admin-frontend
+    restart: always
+    networks:
+      - polimee-network
+
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "10000:10000"
+    # Nginx経由でアクセスするため、外部ポートは公開しない（必要に応じてコメントアウト）
+    # ports:
+    #   - "10000:10000"
     env_file: .env
     environment:
       - PORT=10000
@@ -16,6 +36,8 @@ services:
     restart: always
     volumes:
       - ./backend/uploads:/usr/src/app/uploads
+    networks:
+      - polimee-network
 
   db:
     image: postgres:15
@@ -33,26 +55,38 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    # Nginx経由でアクセスするため、外部ポートは公開しない（必要に応じてコメントアウト）
+    # ports:
+    #   - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=https://api.polimee.com
     restart: always
     depends_on:
       - api
+    networks:
+      - polimee-network
 
   admin-frontend:
     build:
       context: ./admin-frontend
       dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
+    # Nginx経由でアクセスするため、外部ポートは公開しない（必要に応じてコメントアウト）
+    # ports:
+    #   - "3001:3001"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=https://api.polimee.com
     restart: always
     depends_on:
       - api
+    networks:
+      - polimee-network
+
+networks:
+  polimee-network:
+    driver: bridge
 
 volumes:
   db_data:
+    driver: local
+  certbot-www:
     driver: local
