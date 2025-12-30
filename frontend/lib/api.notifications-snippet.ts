@@ -1,4 +1,4 @@
-import api, { unwrap } from './api';
+import { api } from './api';
 
 export interface Notification {
   id: string;
@@ -12,17 +12,17 @@ export interface Notification {
 
 export async function listNotifications(): Promise<Notification[]> {
   const res = await api.get('/notifications');
-  return unwrap<Notification[]>(res);
+  return res.data as Notification[];
 }
 
 export async function markNotificationRead(id: string): Promise<Notification> {
   const res = await api.patch(`/notifications/${id}/read`, {});
-  return unwrap<Notification>(res);
+  return res.data as Notification;
 }
 
 export async function sendNotification(payload: { userId: string; type: string; title: string; text?: string; linkUrl?: string; email?: string }) {
   const res = await api.post('/notifications/send', payload);
-  return unwrap<any>(res);
+  return res.data;
 }
 
 // 互換用: fetchNotifications を使っているページがある可能性に備え、listNotifications のエイリアスを提供します
