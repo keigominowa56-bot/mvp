@@ -57,7 +57,7 @@ function CommentItem({ comment, postId, onReply, addComment, mutate, currentUser
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-            {(comment.author?.name || comment.author?.username || comment.authorUserId.slice(0, 1)).toUpperCase()}
+            {(comment.author?.name || comment.author?.username || comment.authorUserId?.slice(0, 1) || 'U').toUpperCase()}
           </div>
         )}
         <div className="flex-1">
@@ -68,7 +68,7 @@ function CommentItem({ comment, postId, onReply, addComment, mutate, currentUser
             {comment.author?.username ? (
               <span className="text-xs text-gray-500">@{comment.author.username}</span>
             ) : comment.authorUserId ? (
-              <span className="text-xs text-gray-400">@{comment.authorUserId.slice(0, 8)}</span>
+              <span className="text-xs text-gray-400">@{comment.authorUserId?.slice(0, 8) || 'user'}</span>
             ) : null}
             <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
           </div>
@@ -210,30 +210,52 @@ export default function CommentsPage({ params }: Props) {
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm">
-                {(post.author?.name || post.authorUserId.slice(0, 1)).toUpperCase()}
+                {(post.author?.name || post.authorUserId?.slice(0, 1) || 'U').toUpperCase()}
               </div>
             )}
-            <div className="flex-1">
+              <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 {(post.author as any)?.role === 'politician' ? (
-                  <Link href={`/politicians/${post.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                    {post.author?.name || post.author?.username || '議員'}
-                  </Link>
+                  post.authorUserId ? (
+                    <Link href={`/politicians/${post.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                      {post.author?.name || post.author?.username || '議員'}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-gray-900">
+                      {post.author?.name || post.author?.username || '議員'}
+                    </span>
+                  )
                 ) : (post.author as any)?.role === 'admin' ? (
-                  <Link href={`/users/${post.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                    {post.author?.name || post.author?.username || '運営'}
-                  </Link>
+                  post.authorUserId ? (
+                    <Link href={`/users/${post.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                      {post.author?.name || post.author?.username || '運営'}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-gray-900">
+                      {post.author?.name || post.author?.username || '運営'}
+                    </span>
+                  )
                 ) : (
-                  <Link href={`/users/${post.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                    {post.author?.name || post.author?.username || 'ユーザー'}
-                  </Link>
+                  post.authorUserId ? (
+                    <Link href={`/users/${post.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                      {post.author?.name || post.author?.username || 'ユーザー'}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-gray-900">
+                      {post.author?.name || post.author?.username || 'ユーザー'}
+                    </span>
+                  )
                 )}
                 {post.author?.username ? (
-                  <Link href={(post.author as any)?.role === 'politician' ? `/politicians/${post.authorUserId}` : `/users/${post.authorUserId}`} className="text-sm text-gray-500 hover:text-blue-600">
-                    @{post.author.username}
-                  </Link>
+                  post.authorUserId ? (
+                    <Link href={(post.author as any)?.role === 'politician' ? `/politicians/${post.authorUserId}` : `/users/${post.authorUserId}`} className="text-sm text-gray-500 hover:text-blue-600">
+                      @{post.author.username}
+                    </Link>
+                  ) : (
+                    <span className="text-sm text-gray-500">@{post.author.username}</span>
+                  )
                 ) : post.authorUserId ? (
-                  <span className="text-sm text-gray-400">@{post.authorUserId.slice(0, 8)}</span>
+                  <span className="text-sm text-gray-400">@{post.authorUserId?.slice(0, 8) || 'user'}</span>
                 ) : null}
                 <span className="text-xs text-gray-400">
                   {new Date(post.createdAt).toLocaleString()}

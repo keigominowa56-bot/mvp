@@ -116,7 +116,7 @@ export default function FeedPage() {
                   {(p.author as any)?.role === 'politician' ? (
                     p.authorUserId ? (
                       <Link href={`/politicians/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                        {p.author?.name || p.author?.username || `議員${p.authorUserId.slice(0, 4)}`}
+                        {p.author?.name || p.author?.username || `議員${p.authorUserId?.slice(0, 4) || ''}`}
                       </Link>
                     ) : (
                       <span className="font-semibold text-gray-900">
@@ -126,7 +126,7 @@ export default function FeedPage() {
                   ) : (p.author as any)?.role === 'admin' ? (
                     p.authorUserId ? (
                       <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                        {p.author?.name || p.author?.username || `運営${p.authorUserId.slice(0, 4)}`}
+                        {p.author?.name || p.author?.username || `運営${p.authorUserId?.slice(0, 4) || ''}`}
                       </Link>
                     ) : (
                       <span className="font-semibold text-gray-900">
@@ -153,7 +153,7 @@ export default function FeedPage() {
                       <span className="text-sm text-gray-500">@{p.author.username}</span>
                     )
                   ) : p.authorUserId ? (
-                    <span className="text-sm text-gray-400">@{p.authorUserId.slice(0, 8)}</span>
+                    <span className="text-sm text-gray-400">@{p.authorUserId?.slice(0, 8) || 'user'}</span>
                   ) : null}
                   <span className="text-xs text-gray-400">
                     {new Date(p.createdAt).toLocaleString()}

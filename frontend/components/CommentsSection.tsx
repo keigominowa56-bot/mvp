@@ -54,7 +54,7 @@ function CommentItem({ comment, postId, onReply, addComment, mutate, currentUser
             {comment.author?.username ? (
               <span className="text-xs text-gray-500">@{comment.author.username}</span>
             ) : comment.authorUserId ? (
-              <span className="text-xs text-gray-400">@{comment.authorUserId.slice(0, 8)}</span>
+              <span className="text-xs text-gray-400">@{comment.authorUserId?.slice(0, 8) || 'user'}</span>
             ) : null}
             <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
           </div>
