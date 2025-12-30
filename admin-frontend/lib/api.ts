@@ -1,6 +1,25 @@
 // Admin Frontend API Client
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+// APIベースURLを取得し、HTTPSでポート番号なしのURLに正規化
+function getApiBase(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  
+  // 環境変数が設定されている場合
+  if (envUrl) {
+    // HTTPをHTTPSに変換
+    let url = envUrl.replace(/^http:\/\//, 'https://');
+    // ポート番号10000を削除
+    url = url.replace(/:10000(\/|$)/, '$1');
+    // api.polimee.comのポート番号を削除（443以外）
+    url = url.replace(/api\.polimee\.com:\d+/, 'api.polimee.com');
+    return url;
+  }
+  
+  // デフォルト値（HTTPS、ポート番号なし）
+  return 'https://api.polimee.com';
+}
+
+export const API_BASE = getApiBase();
 
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});
