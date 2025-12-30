@@ -17,11 +17,7 @@ const nextConfig = {
   // React の StrictMode（必要に応じて切り替え可能）
   reactStrictMode: true,
 
-  // 国際化（未使用ならそのままでOK）
-  i18n: {
-    locales: ['ja'],
-    defaultLocale: 'ja',
-  },
+  // App Router では i18n 設定は不要（App Router では別の方法で国際化を実装）
 
   // 画像の外部ドメイン許可（SNSなどの OGP 画像を使う場合に必要）
   images: {
@@ -51,6 +47,9 @@ const nextConfig = {
     // 必要なら App Router の設定などを拡張可能
     // serverActions: true,
   },
+
+  // standalone 出力（next.config.ts から統合）
+  output: 'standalone',
 };
 
 module.exports = nextConfig;
