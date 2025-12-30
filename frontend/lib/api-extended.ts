@@ -64,4 +64,4 @@ export async function getCommentLikesCount(commentId: string): Promise<{ count: 
   return unwrap<{ count: number }>(res);
 }
 
-export { createReport, verifyEmail, sendPhoneCode, verifyPhone, likeComment, unlikeComment, isCommentLiked, getCommentLikesCount }
+export { verifyEmail, sendPhoneCode, verifyPhone, likeComment, unlikeComment, isCommentLiked, getCommentLikesCount }
