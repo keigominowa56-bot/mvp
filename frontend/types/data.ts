@@ -118,6 +118,11 @@ export interface Post {
     commentCount: number; 
     isLiked: boolean; // ログインユーザーが「いいね」しているか
     
+    // 賛否投票
+    upvoteCount: number;
+    downvoteCount: number;
+    userVoteStatus: 'upvote' | 'downvote' | 'none'; // ログインユーザーの投票状態
+    
     // タイムスタンプ
     createdAt: string; 
     updatedAt: string; 
