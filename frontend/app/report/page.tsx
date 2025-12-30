@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetchWithAuth, unwrap } from '../../lib/api';
 
@@ -12,7 +12,7 @@ const REPORT_REASONS = [
   'その他',
 ];
 
-export default function ReportPage() {
+function ReportPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetId = searchParams.get('targetId');
@@ -152,6 +152,14 @@ export default function ReportPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">読み込み中...</div>}>
+      <ReportPageContent />
+    </Suspense>
   );
 }
 

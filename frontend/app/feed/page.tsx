@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
 import {
   fetchFeed,
@@ -19,7 +19,7 @@ type FeedFilters = {
   limit?: number;
 };
 
-export default function FeedPage() {
+function FeedPageContent() {
   const params = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -228,5 +228,13 @@ export default function FeedPage() {
         </article>
       ))}
     </div>
+  );
+}
+
+export default function FeedPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">読み込み中...</div>}>
+      <FeedPageContent />
+    </Suspense>
   );
 }

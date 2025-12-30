@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 
@@ -13,7 +14,7 @@ async function fetchSearch(params: URLSearchParams): Promise<SearchResult> {
   return res.json();
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const sp = useSearchParams();
   const params = new URLSearchParams();
   const q = sp.get('q') || '';
@@ -62,5 +63,13 @@ export default function SearchPage() {
         </ul>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">読み込み中...</div>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

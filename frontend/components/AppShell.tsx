@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { LeftSidebar } from './LeftSidebar';
 import { RightSidebarFilters } from './RightSidebarFilters';
 
@@ -13,7 +14,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <div className="col-span-12 md:col-span-2">
-        <RightSidebarFilters />
+        <Suspense fallback={<div className="text-sm text-gray-500">読み込み中...</div>}>
+          <RightSidebarFilters />
+        </Suspense>
       </div>
     </div>
   );
