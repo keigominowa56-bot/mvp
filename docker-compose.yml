@@ -31,6 +31,13 @@ services:
     environment:
       - PORT=10000
       - NODE_ENV=production
+      # Docker Compose内ではサービス名を使用
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_TYPE=postgres
+      - DB_USERNAME=admin
+      - DB_PASSWORD=password123
+      - DB_DATABASE=mvp_database_g0ic
     depends_on:
       - db
     restart: always
@@ -50,6 +57,8 @@ services:
       POSTGRES_DB: mvp_database_g0ic
     ports:
       - "5432:5432"
+    networks:
+      - polimee-network
 
   frontend:
     build:
