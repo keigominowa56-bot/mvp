@@ -5,7 +5,7 @@
 import React, { useState } from 'react'; 
 import { Post } from '../../types/data'; 
 import { MessageCircle, MoreVertical, Loader2 } from 'lucide-react'; 
-import { toggleVote } from '../../utils/fakeApi'; 
+import { toggleReaction, ReactionType } from '../../lib/api'; 
 import { toast } from 'react-hot-toast';
 
 type VoteType = 'upvote' | 'downvote' | 'none';
@@ -84,13 +84,15 @@ export default function PostItem({ post: initialPost }: PostItemProps) {
 
 
     try {
-        const result = await toggleVote(post.id, voteDirection);
+        // 'upvote' -> 'agree', 'downvote' -> 'disagree' にマッピング
+        const reactionType: ReactionType = voteDirection === 'upvote' ? 'agree' : 'disagree';
+        const result = await toggleReaction(post.id, reactionType);
         
         setPost(prev => ({
             ...prev,
-            upvoteCount: result.newUpvoteCount,
-            downvoteCount: result.newDownvoteCount,
-            userVoteStatus: result.newUserVoteStatus,
+            upvoteCount: result.summary.agree,
+            downvoteCount: result.summary.disagree,
+            userVoteStatus: result.reaction === 'agree' ? 'upvote' : result.reaction === 'disagree' ? 'downvote' : 'none',
         }));
     } catch (error) {
         setPost(previousPost);

@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Post } from '../../types/data';
-import { fetchTimelineData } from '../../utils/fakeApi';
+import { fetchPosts } from '../../lib/api';
 import PostItem from './PostItem';
 import PostForm from './PostForm'; // 🚨 正しいパス
 
@@ -20,8 +20,8 @@ export default function PostList() {
     useEffect(() => {
         const loadPosts = async () => {
             try {
-                const data = await fetchTimelineData();
-                setPosts(data);
+                const data = await fetchPosts();
+                setPosts(data as Post[]);
             } catch (err) {
                 console.error("Failed to fetch timeline data:", err);
                 setError("タイムラインデータの取得に失敗しました。");

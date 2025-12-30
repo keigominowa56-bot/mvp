@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { Post } from '../../types/data';
-import { createPost } from '../../utils/fakeApi';
+import { createPost } from '../../lib/api';
 
 interface PostFormProps {
     onPostCreated: (post: Post) => void;
@@ -22,8 +22,12 @@ export default function PostForm({ onPostCreated }: PostFormProps) {
         setError(null);
 
         try {
-            const newPost = await createPost(content, null);
-            onPostCreated(newPost);
+            const newPost = await createPost({ 
+                body: content, 
+                content: content,
+                type: 'activity' 
+            });
+            onPostCreated(newPost as Post);
             setContent('');
         } catch (err) {
             setError('投稿に失敗しました。時間をおいて再試行してください。');
