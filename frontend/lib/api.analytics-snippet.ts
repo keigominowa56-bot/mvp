@@ -1,4 +1,4 @@
-import api, { unwrap } from './api';
+import { api } from './api';
 
 export interface PostsSummary {
   total: number;
@@ -14,10 +14,10 @@ export interface PostsTimeseriesPoint {
 
 export async function fetchPostsSummary(): Promise<PostsSummary> {
   const res = await api.get('/analytics/posts/summary');
-  return unwrap<PostsSummary>(res);
+  return res.data as PostsSummary;
 }
 
 export async function fetchPostsTimeseries(days = 30): Promise<PostsTimeseriesPoint[]> {
-  const res = await api.get(`/analytics/posts/timeseries`, { params: { days } });
-  return unwrap<PostsTimeseriesPoint[]>(res);
+  const res = await api.get(`/analytics/posts/timeseries?days=${days}`);
+  return res.data as PostsTimeseriesPoint[];
 }
