@@ -1,4 +1,4 @@
-import api, { unwrap } from './api';
+import { api } from './api';
 
 export type PublicRecommendationUser = {
   id: string;
@@ -9,8 +9,8 @@ export type PublicRecommendationUser = {
 
 export async function fetchPublicRecommendations(limit = 8): Promise<PublicRecommendationUser[]> {
   try {
-    const res = await api.get('/recommendations', { params: { limit } });
-    return unwrap<PublicRecommendationUser[]>(res);
+    const res = await api.get(`/recommendations?limit=${limit}`);
+    return res.data as PublicRecommendationUser[];
   } catch (e: any) {
     // 404 等は空配列で握りつぶし
     if (e?.response?.status === 404) {
