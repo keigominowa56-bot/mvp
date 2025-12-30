@@ -83,39 +83,75 @@ export default function FeedPage() {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-3 flex-1">
               {p.author?.profileImageUrl ? (
-                <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
+                p.authorUserId ? (
+                  <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
+                    <img
+                      src={p.author.profileImageUrl}
+                      alt={p.author.name || 'ユーザー'}
+                      className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80"
+                    />
+                  </Link>
+                ) : (
                   <img
                     src={p.author.profileImageUrl}
                     alt={p.author.name || 'ユーザー'}
-                    className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80"
+                    className="w-12 h-12 rounded-full object-cover"
                   />
-                </Link>
+                )
               ) : (
-                <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
-                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold cursor-pointer hover:opacity-80">
-                    {(p.author?.name || p.authorUserId.slice(0, 1)).toUpperCase()}
+                p.authorUserId ? (
+                  <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
+                    <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold cursor-pointer hover:opacity-80">
+                      {(p.author?.name || p.authorUserId?.slice(0, 1) || 'U').toUpperCase()}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
+                    {(p.author?.name || 'U').toUpperCase()}
                   </div>
-                </Link>
+                )
               )}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   {(p.author as any)?.role === 'politician' ? (
-                    <Link href={`/politicians/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                      {p.author?.name || p.author?.username || `議員${p.authorUserId.slice(0, 4)}`}
-                    </Link>
+                    p.authorUserId ? (
+                      <Link href={`/politicians/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                        {p.author?.name || p.author?.username || `議員${p.authorUserId.slice(0, 4)}`}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-gray-900">
+                        {p.author?.name || p.author?.username || '議員'}
+                      </span>
+                    )
                   ) : (p.author as any)?.role === 'admin' ? (
-                    <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                      {p.author?.name || p.author?.username || `運営${p.authorUserId.slice(0, 4)}`}
-                    </Link>
+                    p.authorUserId ? (
+                      <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                        {p.author?.name || p.author?.username || `運営${p.authorUserId.slice(0, 4)}`}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-gray-900">
+                        {p.author?.name || p.author?.username || '運営'}
+                      </span>
+                    )
                   ) : (
-                    <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
-                      {p.author?.name || p.author?.username || `ユーザー`}
-                    </Link>
+                    p.authorUserId ? (
+                      <Link href={`/users/${p.authorUserId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                        {p.author?.name || p.author?.username || `ユーザー`}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-gray-900">
+                        {p.author?.name || p.author?.username || 'ユーザー'}
+                      </span>
+                    )
                   )}
                   {p.author?.username ? (
-                    <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`} className="text-sm text-gray-500 hover:text-blue-600">
-                      @{p.author.username}
-                    </Link>
+                    p.authorUserId ? (
+                      <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`} className="text-sm text-gray-500 hover:text-blue-600">
+                        @{p.author.username}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-gray-500">@{p.author.username}</span>
+                    )
                   ) : p.authorUserId ? (
                     <span className="text-sm text-gray-400">@{p.authorUserId.slice(0, 8)}</span>
                   ) : null}
@@ -161,7 +197,7 @@ export default function FeedPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {(p.author as any)?.role === 'politician' && (
+              {(p.author as any)?.role === 'politician' && p.authorUserId && (
                 <FollowButton userId={p.authorUserId} />
               )}
               <ReportButton targetId={p.id} targetType="post" />
