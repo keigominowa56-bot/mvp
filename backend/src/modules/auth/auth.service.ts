@@ -100,12 +100,20 @@ export class AuthService {
       }
       
       console.log(`[AuthService] loginWithFirebase - User found: email=${email}, userId=${u.id}, role=${u.role}, expectedRole=${expectedRole}`);
+      console.log(`[AuthService] loginWithFirebase - User role type: ${typeof u.role}, value: "${u.role}"`);
+      console.log(`[AuthService] loginWithFirebase - Expected role type: ${typeof expectedRole}, value: "${expectedRole}"`);
       
-      // ロールチェック
-      if (u.role !== expectedRole) {
-        console.log(`[AuthService] loginWithFirebase - Role mismatch. email: ${email}, userRole: ${u.role}, expectedRole: ${expectedRole}`);
+      // ロールチェック（大文字小文字を許容）
+      const userRoleUpper = String(u.role).toUpperCase();
+      const expectedRoleUpper = String(expectedRole).toUpperCase();
+      console.log(`[AuthService] loginWithFirebase - Comparing roles: "${userRoleUpper}" === "${expectedRoleUpper}"`);
+      
+      if (userRoleUpper !== expectedRoleUpper) {
+        console.log(`[AuthService] loginWithFirebase - Role mismatch. email: ${email}, userRole: "${u.role}" (${userRoleUpper}), expectedRole: "${expectedRole}" (${expectedRoleUpper})`);
         throw new UnauthorizedException('アカウントの権限が正しくありません');
       }
+      
+      console.log(`[AuthService] loginWithFirebase - Role check passed: ${userRoleUpper} === ${expectedRoleUpper}`);
       
       // Firebase認証に成功したので、passwordHashの検証はスキップ
       // Firebase UIDを更新（同期）
