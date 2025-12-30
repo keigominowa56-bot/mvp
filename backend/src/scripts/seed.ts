@@ -44,16 +44,29 @@ export async function runSeed(ds: DataSource) {
   } as any);
   politician = (await userRepo.save(politician))!;
 
-  let systemUser = userRepo.create({
-    email: 'system@news.local',
-    passwordHash: await bcrypt.hash('password123', 10),
-    name: 'システム',
-    nickname: 'system',
-    displayName: 'システム',
-    role: 'admin',
-    phoneNumber: null,
-    ageGroup: null,
-    status: 'active',
-  } as any);
-  systemUser = (await userRepo.save(systemUser))!;
+  // 環境変数から管理者メールアドレスを取得（デフォルトは system@news.local）
+  const adminEmail = process.env.ADMIN_EMAIL || 'system@news.local';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'password123';
+  const adminName = process.env.ADMIN_NAME || 'システム管理者';
+  
+  // 既存の管理者ユーザーをチェック
+  const existingAdmin = await userRepo.findOne({ where: { email: adminEmail } });
+  if (!existingAdmin) {
+    let systemUser = userRepo.create({
+      email: adminEmail,
+      passwordHash: await bcrypt.hash(adminPassword, 10),
+      name: adminName,
+      nickname: 'admin',
+      displayName: adminName,
+      role: 'admin',
+      phoneNumber: null,
+      ageGroup: null,
+      status: 'approved', // 管理者は承認済みとして作成
+      emailVerified: true, // 開発環境では認証済みとして作成
+    } as any);
+    systemUser = (await userRepo.save(systemUser))!;
+    console.log(`✅ 管理者ユーザーを作成しました: ${adminEmail}`);
+  } else {
+    console.log(`ℹ️  管理者ユーザーは既に存在します: ${adminEmail}`);
+  }
 }

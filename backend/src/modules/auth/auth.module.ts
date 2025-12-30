@@ -9,6 +9,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { FirebaseAdminProvider } from './firebase.provider';
 import { JwtStrategy } from './jwt.strategy';
+import { DevSeedController } from './dev-seed.controller';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { JwtStrategy } from './jwt.strategy';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, DevSeedController],
   providers: [AuthService, FirebaseAdminProvider, JwtStrategy],
   exports: [AuthService, JwtStrategy, PassportModule],
 })
