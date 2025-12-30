@@ -19,7 +19,7 @@ export async function followPolitician(politicianId: string) {
 }
 
 export async function unfollowPolitician(politicianId: string) {
-  const res = await api.delete('/follows', { data: { politicianId } });
+  const res = await api.delete(`/follows?politicianId=${politicianId}`);
   return res.data;
 }
 
