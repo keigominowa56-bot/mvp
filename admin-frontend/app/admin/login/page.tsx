@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 import { adminLogin } from '@/lib/api';
 
 export default function AdminLoginPage() {
@@ -17,7 +19,22 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const result = await adminLogin(email, password);
+      // Firebase Authenticationでログイン
+      const auth = getAuth(app);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // メール認証チェック
+      if (!userCredential.user.emailVerified) {
+        setError('メール認証が完了していません。メールに届いたリンクをクリックしてください。');
+        setLoading(false);
+        return;
+      }
+      
+      // Firebase IDトークンを取得
+      const idToken = await userCredential.user.getIdToken();
+      
+      // バックエンドにFirebaseトークンを送信してJWTトークンを取得
+      const result = await adminLogin(idToken);
       
       // LocalStorageにトークンを保存
       if (result.token) {
@@ -27,7 +44,18 @@ export default function AdminLoginPage() {
         setError('ログインに失敗しました：トークンが取得できませんでした');
       }
     } catch (err: any) {
-      setError(err.message || 'ログインに失敗しました');
+      console.error('Login error:', err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('メールアドレスかパスワードが違います');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('何度も失敗したため一時的にブロックされました。時間を置いて再度お試しください');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('メールアドレスの形式が正しくありません');
+      } else if (err.code === 'auth/user-disabled') {
+        setError('このアカウントは無効化されています');
+      } else {
+        setError(err.message || 'ログインに失敗しました');
+      }
     } finally {
       setLoading(false);
     }

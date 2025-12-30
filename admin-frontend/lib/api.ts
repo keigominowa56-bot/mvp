@@ -108,11 +108,14 @@ export async function fetchCurrentUser(): Promise<User> {
   return unwrap<User>(res);
 }
 
-// 管理者ログイン
-export async function adminLogin(email: string, password: string) {
-  const res = await apiFetchWithAuth('/api/auth/admin/login', {
+// 管理者ログイン（Firebase IDトークンを使用）
+export async function adminLogin(idToken: string) {
+  const res = await fetch(`${API_BASE}/auth/admin/login`, {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
   });
   return unwrap(res);
 }

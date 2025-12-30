@@ -16,14 +16,14 @@ export class AuthController {
   }
 
   @Post('admin/login')
-  async adminLogin(@Body() body: { email: string; password: string }) {
-    console.log('[AuthController] POST /api/auth/admin/login called with email:', body.email);
+  async adminLogin(@Headers('authorization') authHeader: string) {
+    console.log('[AuthController] POST /api/auth/admin/login called');
     try {
-      const result = await this.auth.login(body.email, body.password, 'admin');
-      console.log('[AuthController] Login successful for email:', body.email);
+      const result = await this.auth.loginWithFirebase(authHeader, 'admin');
+      console.log('[AuthController] Login successful');
       return result;
     } catch (error) {
-      console.error('[AuthController] Login failed for email:', body.email, 'Error:', error);
+      console.error('[AuthController] Login failed, Error:', error);
       throw error;
     }
   }

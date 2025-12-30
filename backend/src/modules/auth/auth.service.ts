@@ -42,6 +42,84 @@ export class AuthService {
     return { ok: true, message: '議員登録が完了しました。管理者の承認をお待ちください。' };
   }
 
+  // Firebase Authenticationを使用したログイン（管理画面・議員用）
+  async loginWithFirebase(authHeader: string, expectedRole: 'admin' | 'politician') {
+    console.log(`[AuthService] LoginWithFirebase attempt, expectedRole: ${expectedRole}`);
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('[AuthService] loginWithFirebase - 認証ヘッダーが無効です');
+      throw new UnauthorizedException('認証ヘッダーが無効です');
+    }
+    
+    const idToken = authHeader.substring(7);
+    console.log('[AuthService] loginWithFirebase - トークン抽出成功 (長さ:', idToken.length, ')');
+    
+    try {
+      console.log('[AuthService] loginWithFirebase - Firebaseトークン検証開始...');
+      // Firebase IDトークンを検証
+      const decodedToken = await this.firebaseAdmin.auth().verifyIdToken(idToken);
+      console.log('[AuthService] loginWithFirebase - トークン検証成功. UID:', decodedToken.uid, 'Email:', decodedToken.email);
+      const email = decodedToken.email;
+      
+      if (!email) {
+        console.error('[AuthService] loginWithFirebase - メールアドレスが取得できませんでした');
+        throw new UnauthorizedException('メールアドレスが取得できませんでした');
+      }
+      
+      // メールアドレス認証チェック
+      if (!decodedToken.email_verified) {
+        console.warn('[AuthService] loginWithFirebase - メールアドレス未認証');
+        throw new UnauthorizedException('メールアドレスが未認証です。メールに届いたリンクをクリックしてください');
+      }
+      
+      // データベースからユーザーを取得（退会済みユーザーは除外）
+      const u = await this.users.findOne({ 
+        where: { email, deletedAt: IsNull() } as any,
+      });
+      
+      if (!u) {
+        console.log(`[AuthService] loginWithFirebase - User not found for email: ${email}`);
+        throw new UnauthorizedException('ユーザーが見つかりません。管理者に連絡してください。');
+      }
+      
+      // 退会済みユーザーのチェック（念のため）
+      if (u.deletedAt) {
+        console.log(`[AuthService] loginWithFirebase - User is deleted. email: ${email}, userId: ${u.id}, deletedAt: ${u.deletedAt}`);
+        throw new UnauthorizedException('このアカウントは退会済みです。再登録が必要です。');
+      }
+      
+      console.log(`[AuthService] loginWithFirebase - User found: email=${email}, userId=${u.id}, role=${u.role}, expectedRole=${expectedRole}`);
+      
+      // ロールチェック
+      if (u.role !== expectedRole) {
+        console.log(`[AuthService] loginWithFirebase - Role mismatch. email: ${email}, userRole: ${u.role}, expectedRole: ${expectedRole}`);
+        throw new UnauthorizedException('アカウントの権限が正しくありません');
+      }
+      
+      // Firebase認証に成功したので、passwordHashの検証はスキップ
+      // Firebase UIDを更新（同期）
+      if (u.firebaseUid !== decodedToken.uid) {
+        console.log(`[AuthService] loginWithFirebase - Updating firebaseUid for user: ${u.id}`);
+        u.firebaseUid = decodedToken.uid;
+        await this.users.save(u);
+      }
+      
+      // JWTトークンを生成
+      const token = jwt.sign({ sub: u.id, role: u.role }, this.configService.get<string>('JWT_SECRET')!, { expiresIn: '7d' });
+      console.log(`[AuthService] loginWithFirebase - Login successful: email=${email}, userId=${u.id}, role=${u.role}`);
+      return { token };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('[AuthService] loginWithFirebase - Firebase認証エラー:', errorMessage);
+      console.error('[AuthService] loginWithFirebase - エラー詳細:', error);
+      throw new UnauthorizedException('Firebase認証トークンが無効です: ' + errorMessage);
+    }
+  }
+
+  // 従来のemail/passwordログイン（後方互換性のため残す）
   async login(email: string, password: string, expectedRole: 'admin' | 'politician') {
     console.log(`[AuthService] Login attempt for email: ${email}, expectedRole: ${expectedRole}`);
     
