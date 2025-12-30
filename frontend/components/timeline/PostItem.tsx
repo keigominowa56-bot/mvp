@@ -60,8 +60,8 @@ export default function PostItem({ post: initialPost }: PostItemProps) {
     const isUpvote = voteDirection === 'upvote';
     const isDownvote = voteDirection === 'downvote';
 
-    let newUp = post.upvoteCount;
-    let newDown = post.downvoteCount;
+    let newUp = post.upvoteCount ?? 0;
+    let newDown = post.downvoteCount ?? 0;
     let newStatus: VoteType = 'none';
 
     if (isUpvote) {
@@ -156,7 +156,7 @@ export default function PostItem({ post: initialPost }: PostItemProps) {
               fill={post.userVoteStatus === 'upvote' ? 'currentColor' : 'none'} 
               className="w-[18px] h-[18px]" 
           />
-          <span className="text-sm font-semibold">{post.upvoteCount} 賛成</span>
+          <span className="text-sm font-semibold">{post.upvoteCount ?? 0} 賛成</span>
         </button>
 
         {/* 💡 反対ボタン (Downvote) - SVGコンポーネントを使用 */}
@@ -170,13 +170,13 @@ export default function PostItem({ post: initialPost }: PostItemProps) {
               fill={post.userVoteStatus === 'downvote' ? 'currentColor' : 'none'} 
               className="w-[18px] h-[18px]" 
           />
-          <span className="text-sm font-semibold">{post.downvoteCount} 反対</span>
+          <span className="text-sm font-semibold">{post.downvoteCount ?? 0} 反対</span>
         </button>
 
         {/* コメントボタン */}
         <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
           <MessageCircle size={18} />
-          <span className="text-sm">{post.commentCount} コメント</span>
+          <span className="text-sm">{post.commentCount ?? 0} コメント</span>
         </button>
 
       </div>
