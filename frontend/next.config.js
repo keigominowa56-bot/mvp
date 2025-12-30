@@ -50,6 +50,13 @@ const nextConfig = {
 
   // standalone 出力（next.config.ts から統合）
   output: 'standalone',
+
+  // 環境変数のデフォルト値を設定
+  env: {
+    // API Base URL のデフォルト値を設定
+    // 本番環境では HTTPS を使用し、ポート番号は不要です
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com',
+  },
 };
 
 module.exports = nextConfig;
