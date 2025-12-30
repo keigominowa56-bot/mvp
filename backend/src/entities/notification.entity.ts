@@ -32,7 +32,7 @@ export class Notification {
   @Column({ type: 'text', nullable: true })
   commentContent: string | null; // コメント内容
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   readAt: Date | null;
 
   @CreateDateColumn()

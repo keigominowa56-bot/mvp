@@ -18,6 +18,6 @@ export class Comment {
   @Column({ type: 'boolean', default: false })
   hidden: boolean;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 }

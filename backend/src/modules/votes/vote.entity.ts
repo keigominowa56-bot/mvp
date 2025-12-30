@@ -19,6 +19,6 @@ export class Vote {
   @Column({ type: 'varchar' })
   type: 'support' | 'oppose';
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 }
