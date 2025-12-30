@@ -20,5 +20,3 @@ export function useComments(postId: string) {
     mutate,
   };
 }
-
-export { useComments }
