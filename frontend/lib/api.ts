@@ -44,27 +44,37 @@ export async function unwrap<T = any>(res: Response): Promise<T> {
 
 export type Post = {
   id: string;
-  authorUserId: string;
+  authorUserId?: string;
   author?: {
     id: string;
     name?: string;
     username?: string;
     profileImageUrl?: string;
+    avatarUrl?: string | null;
+    prefecture?: string | null;
+    ageGroup?: '10s' | '20s' | '30s' | '40s' | '50s+' | 'Unknown' | null;
   };
-  type: 'activity' | 'pledge' | 'question' | 'news';
-  title: string;
+  type?: 'activity' | 'pledge' | 'question' | 'news';
+  title?: string;
   content: string;
   body?: string; // contentのエイリアスとして使用可能
   createdAt: string;
+  updatedAt?: string;
   mediaIds?: string[];
   regionId?: string;
   agreeCount?: number;
   disagreeCount?: number;
   commentCount?: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
   videoUrl?: string;
   postCategory?: 'policy' | 'activity';
   visibility?: 'public' | 'hidden';
+  // タイムライン表示用のプロパティ
+  likeCount?: number;
+  isLiked?: boolean;
+  upvoteCount?: number;
+  downvoteCount?: number;
+  userVoteStatus?: 'upvote' | 'downvote' | 'none';
 };
 
 export type Comment = {

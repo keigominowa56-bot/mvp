@@ -3,8 +3,7 @@
 'use client'; 
 
 import React, { useState, useEffect } from 'react';
-import { Post } from '../../types/data';
-import { fetchPosts } from '../../lib/api';
+import { Post, fetchPosts } from '../../lib/api';
 import PostItem from './PostItem';
 import PostForm from './PostForm'; // 🚨 正しいパス
 
@@ -21,7 +20,7 @@ export default function PostList() {
         const loadPosts = async () => {
             try {
                 const data = await fetchPosts();
-                setPosts(data as Post[]);
+                setPosts(data);
             } catch (err) {
                 console.error("Failed to fetch timeline data:", err);
                 setError("タイムラインデータの取得に失敗しました。");

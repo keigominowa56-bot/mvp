@@ -95,45 +95,16 @@ export type AgeGroup = '10s' | '20s' | '30s' | '40s' | '50s+' | 'Unknown';
 
 /**
  * 投稿 (Post) の型定義
- * 投稿内容と投稿者情報を含む
+ * lib/api.ts から再エクスポート（型定義を一箇所に統合）
  */
-export interface Post {
-    id: string;
-    content: string; // 投稿本文
-    imageUrl: string | null; // 添付画像があればそのURL
-    
-    // 投稿者情報 (ネスト) - タイムライン表示に必要な情報のみ
-    author: {
-        id: string;
-        username: string;
-        avatarUrl: string | null;
-        
-        // 投稿と関連付けたい本人確認属性情報
-        prefecture: string | null; 
-        ageGroup: AgeGroup | null;
-    };
-    
-    // インタラクション (いいね、コメント)
-    likeCount: number; 
-    commentCount: number; 
-    isLiked: boolean; // ログインユーザーが「いいね」しているか
-    
-    // 賛否投票
-    upvoteCount: number;
-    downvoteCount: number;
-    userVoteStatus: 'upvote' | 'downvote' | 'none'; // ログインユーザーの投票状態
-    
-    // タイムスタンプ
-    createdAt: string; 
-    updatedAt: string; 
-}
+export type { Post } from '../lib/api';
 
 /**
  * タイムライン表示用のデータ構造
  * ページネーションを考慮
  */
 export interface TimelineData {
-    posts: Post[]; // 投稿のリスト
+    posts: import('../lib/api').Post[]; // 投稿のリスト
     hasNextPage: boolean; // 次のページがあるか
     nextCursor: string | null; // 次のページ取得のためのカーソル値
     totalCount: number; // 全投稿数

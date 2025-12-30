@@ -2,8 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Post } from '../../types/data';
-import { createPost } from '../../lib/api';
+import { Post, createPost } from '../../lib/api';
 
 interface PostFormProps {
     onPostCreated: (post: Post) => void;
@@ -27,7 +26,7 @@ export default function PostForm({ onPostCreated }: PostFormProps) {
                 content: content,
                 type: 'activity' 
             });
-            onPostCreated(newPost as Post);
+            onPostCreated(newPost);
             setContent('');
         } catch (err) {
             setError('投稿に失敗しました。時間をおいて再試行してください。');

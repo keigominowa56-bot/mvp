@@ -3,9 +3,8 @@
 'use client';
 
 import React, { useState } from 'react'; 
-import { Post } from '../../types/data'; 
+import { Post, toggleReaction, ReactionType } from '../../lib/api'; 
 import { MessageCircle, MoreVertical, Loader2 } from 'lucide-react'; 
-import { toggleReaction, ReactionType } from '../../lib/api'; 
 import { toast } from 'react-hot-toast';
 
 type VoteType = 'upvote' | 'downvote' | 'none';
@@ -113,14 +112,14 @@ export default function PostItem({ post: initialPost }: PostItemProps) {
         {/* ... (中略: ユーザー情報) ... */}
         <div className="flex items-center space-x-3">
           <img 
-            src={post.author.avatarUrl || defaultAvatar} 
-            alt={post.author.username} 
+            src={post.author?.avatarUrl || defaultAvatar} 
+            alt={post.author?.username || 'ユーザー'} 
             className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
           />
           <div>
-            <div className="font-semibold text-gray-900 dark:text-white">{post.author.username}</div>
+            <div className="font-semibold text-gray-900 dark:text-white">{post.author?.username || '匿名ユーザー'}</div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              {post.author.prefecture || '地域不明'} ({post.author.ageGroup || '年代不明'}) • {new Date(post.createdAt).toLocaleDateString()}
+              {post.author?.prefecture || '地域不明'} ({post.author?.ageGroup || '年代不明'}) • {new Date(post.createdAt).toLocaleDateString()}
             </div>
           </div>
         </div>

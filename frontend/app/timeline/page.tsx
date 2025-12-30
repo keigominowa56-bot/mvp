@@ -1,15 +1,6 @@
 'use client';
 import useSWRInfinite from 'swr/infinite';
-import { API_BASE } from '../../lib/api';
-
-type Post = {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  authorUserId: string;
-  createdAt: string;
-};
+import { API_BASE, Post } from '../../lib/api';
 
 const PAGE_SIZE = 20;
 const getKey = (pageIndex: number, previousPageData: Post[]) => {
