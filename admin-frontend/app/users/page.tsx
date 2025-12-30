@@ -20,7 +20,7 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
     fetch(`${apiBase}/api/admin/users`, {
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'
@@ -35,7 +35,7 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
     fetch(`${apiBase}/api/admin/users/${id}/approve`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
@@ -51,7 +51,7 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
     fetch(`${apiBase}/api/admin/users/${id}/reject`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
@@ -67,7 +67,7 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
     fetch(`${apiBase}/api/admin/users/${id}/allow-engagement`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
@@ -87,7 +87,7 @@ export default function UserManagePage() {
       return;
     }
     if (!confirm('投稿分析の許可を解除しますか？')) return;
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
     fetch(`${apiBase}/api/admin/users/${id}/revoke-engagement`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },

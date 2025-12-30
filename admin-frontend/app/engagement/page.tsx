@@ -36,7 +36,7 @@ export default function EngagementPage() {
       return;
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
     fetch(`${apiBase}/api/auth/me`, {
       headers: { 'Authorization': `Bearer ${token}` },
       credentials: 'include'

@@ -100,12 +100,9 @@ async function bootstrap() {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://api.polimee.com:3000',
-    'http://api.polimee.com:3001',
-    'http://polimee.com:3000',
-    'http://polimee.com:3001',
-    'http://153.126.130.7:3000',
-    'http://153.126.130.7:3001'
+    'https://polimee.com',
+    'https://www.polimee.com',
+    'https://api.polimee.com',
   ];
   console.log('[Main] CORS設定:', allowedOrigins);
   app.enableCors({

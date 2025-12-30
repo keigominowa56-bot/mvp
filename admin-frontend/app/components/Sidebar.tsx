@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
 
 export default function Sidebar() {
   const [user, setUser] = useState<{ role?: string; name?: string } | null>(null);

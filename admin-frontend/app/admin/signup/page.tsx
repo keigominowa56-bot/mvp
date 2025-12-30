@@ -10,7 +10,7 @@ export default function AdminSignupPage() {
   const [loading, setLoading] = useState(false);
   
   // デバッグ：環境変数を確認
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
   const apiUrl = `${apiBase}/api`;
   console.log('🔧 Environment check:');
   console.log('  - NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
@@ -37,7 +37,7 @@ export default function AdminSignupPage() {
       await sendEmailVerification(userCredential.user);
 
       // バックエンドに管理者登録
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
       const signupUrl = `${apiBase}/api/auth/admin/signup`;
       
       // デバッグ用：実際のリクエストURLをコンソールに出力

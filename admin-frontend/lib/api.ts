@@ -1,6 +1,6 @@
 // Admin Frontend API Client
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://153.126.130.7:10000';
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
 
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});

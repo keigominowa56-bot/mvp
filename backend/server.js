@@ -12,7 +12,11 @@ const port = 8000;
 // 1. ミドルウェア設定
 // ------------------------------------------------------------------
 app.use(cors({
-  origin: 'http://localhost:3000' // フロントエンドからのアクセスを許可
+  origin: [
+    'http://localhost:3000',
+    'https://polimee.com',
+    'https://www.polimee.com',
+  ] // フロントエンドからのアクセスを許可
 }));
 
 app.use(bodyParser.json());

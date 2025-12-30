@@ -36,7 +36,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://153.126.130.7:10000
+      - NEXT_PUBLIC_API_BASE_URL=https://api.polimee.com
     restart: always
     depends_on:
       - api
@@ -48,7 +48,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://153.126.130.7:10000
+      - NEXT_PUBLIC_API_BASE_URL=https://api.polimee.com
     restart: always
     depends_on:
       - api
