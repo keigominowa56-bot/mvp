@@ -63,5 +63,3 @@ export async function getCommentLikesCount(commentId: string): Promise<{ count: 
   });
   return unwrap<{ count: number }>(res);
 }
-
-export { verifyEmail, sendPhoneCode, verifyPhone, likeComment, unlikeComment, isCommentLiked, getCommentLikesCount }
