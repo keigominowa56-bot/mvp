@@ -45,14 +45,25 @@ export class AuthService {
   // Firebase Authenticationを使用したログイン（管理画面・議員用）
   async loginWithFirebase(authHeader: string, expectedRole: 'admin' | 'politician') {
     console.log(`[AuthService] LoginWithFirebase attempt, expectedRole: ${expectedRole}`);
+    console.log('[AuthService] loginWithFirebase - authHeader received:', authHeader ? `Bearer ${authHeader.substring(0, 20)}...` : 'undefined or empty');
+    console.log('[AuthService] loginWithFirebase - authHeader type:', typeof authHeader);
+    console.log('[AuthService] loginWithFirebase - authHeader length:', authHeader?.length || 0);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('[AuthService] loginWithFirebase - 認証ヘッダーが無効です');
+    if (!authHeader) {
+      console.error('[AuthService] loginWithFirebase - 認証ヘッダーが空です');
       throw new UnauthorizedException('認証ヘッダーが無効です');
     }
     
-    const idToken = authHeader.substring(7);
+    // Bearer プレフィックスを確認・追加
+    let token = authHeader;
+    if (!authHeader.startsWith('Bearer ')) {
+      console.log('[AuthService] loginWithFirebase - Bearer prefix missing, adding it');
+      token = `Bearer ${authHeader}`;
+    }
+    
+    const idToken = token.substring(7); // "Bearer " の7文字を削除
     console.log('[AuthService] loginWithFirebase - トークン抽出成功 (長さ:', idToken.length, ')');
+    console.log('[AuthService] loginWithFirebase - トークン先頭20文字:', idToken.substring(0, 20));
     
     try {
       console.log('[AuthService] loginWithFirebase - Firebaseトークン検証開始...');

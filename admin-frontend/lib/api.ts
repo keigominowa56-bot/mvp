@@ -110,13 +110,26 @@ export async function fetchCurrentUser(): Promise<User> {
 
 // 管理者ログイン（Firebase IDトークンを使用）
 export async function adminLogin(idToken: string) {
+  console.log('[adminLogin] Calling API with token length:', idToken?.length || 0);
+  console.log('[adminLogin] Token preview:', idToken ? `${idToken.substring(0, 20)}...` : 'undefined');
+  
+  if (!idToken) {
+    throw new Error('Firebase IDトークンが取得できませんでした');
+  }
+  
+  // Bearer プレフィックスが既に含まれているか確認
+  const authHeader = idToken.startsWith('Bearer ') ? idToken : `Bearer ${idToken}`;
+  console.log('[adminLogin] Authorization header:', `${authHeader.substring(0, 30)}...`);
+  
   const res = await fetch(`${API_BASE}/auth/admin/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${idToken}`,
+      'Authorization': authHeader,
     },
   });
+  
+  console.log('[adminLogin] Response status:', res.status);
   return unwrap(res);
 }
 

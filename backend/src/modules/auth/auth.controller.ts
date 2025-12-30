@@ -18,8 +18,24 @@ export class AuthController {
   @Post('admin/login')
   async adminLogin(@Headers('authorization') authHeader: string) {
     console.log('[AuthController] POST /api/auth/admin/login called');
+    console.log('[AuthController] Authorization header received:', authHeader ? `Bearer ${authHeader.substring(0, 20)}...` : 'undefined or empty');
+    console.log('[AuthController] Authorization header type:', typeof authHeader);
+    console.log('[AuthController] Authorization header length:', authHeader?.length || 0);
+    
+    if (!authHeader) {
+      console.error('[AuthController] Authorization header is missing or empty');
+      throw new UnauthorizedException('認証ヘッダーが送信されていません');
+    }
+    
+    // Bearer プレフィックスが既に含まれているか確認
+    let token = authHeader;
+    if (!authHeader.startsWith('Bearer ')) {
+      console.log('[AuthController] Adding Bearer prefix to token');
+      token = `Bearer ${authHeader}`;
+    }
+    
     try {
-      const result = await this.auth.loginWithFirebase(authHeader, 'admin');
+      const result = await this.auth.loginWithFirebase(token, 'admin');
       console.log('[AuthController] Login successful');
       return result;
     } catch (error) {
