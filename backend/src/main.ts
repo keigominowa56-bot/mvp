@@ -102,11 +102,13 @@ async function bootstrap() {
     'http://localhost:3001',
     'https://polimee.com',
     'https://www.polimee.com',
+    'https://admin.polimee.com',
     'https://api.polimee.com',
   ];
   console.log('[Main] CORS設定:', allowedOrigins);
   app.enableCors({
     origin: allowedOrigins,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
