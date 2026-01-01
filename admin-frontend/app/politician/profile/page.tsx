@@ -172,8 +172,8 @@ export default function PoliticianProfilePage() {
                   try {
                     const data = await uploadMedia(file);
                     const imageUrl = data.url || data.path || '';
-                    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${apiBase}${imageUrl}`;
+                    // 画像URLが相対パスの場合はそのまま使用（APIサーバーが返すURLを信頼）
+                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : imageUrl;
                     setFormData(prev => ({ ...prev, profileImageUrl: fullUrl }));
                     setSuccess('画像をアップロードしました');
                     setError(null);

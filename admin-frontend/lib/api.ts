@@ -1,13 +1,23 @@
 // Admin Frontend API Client
 
-// APIベースURL（環境変数を優先、末尾のスラッシュなし、/apiは含めない）
+// APIベースURL（環境変数のみを使用、末尾のスラッシュなし、/apiは含めない）
 function getApiBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
+  
+  // 環境変数が設定されていない場合はエラー
+  if (!base) {
+    const errorMsg = '[API] NEXT_PUBLIC_API_BASE_URL is not set. Please set it in your environment variables.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+  
   // 絶対URLであることを保証（http:// または https:// で始まる）
   if (!base.startsWith('http://') && !base.startsWith('https://')) {
-    console.error('[API] Invalid API_BASE, falling back to default:', base);
-    return 'https://api.polimee.com';
+    const errorMsg = `[API] Invalid API_BASE format: ${base}. Must start with http:// or https://`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
+  
   // 末尾のスラッシュを削除
   return base.replace(/\/+$/, '');
 }

@@ -10,11 +10,8 @@ export default function AdminSignupPage() {
   const [loading, setLoading] = useState(false);
   
   // デバッグ：環境変数を確認
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-  const apiUrl = `${apiBase}/api`;
   console.log('🔧 Environment check:');
   console.log('  - NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-  console.log('  - Resolved API URL:', apiUrl);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,11 +37,8 @@ export default function AdminSignupPage() {
       const { apiFetch } = await import('@/lib/api');
       
       // デバッグ用：実際のリクエストURLをコンソールに出力
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
       console.log('🚀 ===== SIGNUP REQUEST =====');
-      console.log('🚀 Sending request to:', `${apiBase}/api/auth/admin/signup`);
       console.log('🚀 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-      console.log('🚀 Expected backend:', apiBase);
       console.log('🚀 ============================');
       
       const res = await apiFetch('/api/auth/admin/signup', {
