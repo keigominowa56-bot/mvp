@@ -1,7 +1,18 @@
 // Admin Frontend API Client
 
 // APIベースURL（環境変数を優先、末尾のスラッシュなし、/apiは含めない）
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+function getApiBase(): string {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+  // 絶対URLであることを保証（http:// または https:// で始まる）
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    console.error('[API] Invalid API_BASE, falling back to default:', base);
+    return 'https://api.polimee.com';
+  }
+  // 末尾のスラッシュを削除
+  return base.replace(/\/+$/, '');
+}
+
+const API_BASE = getApiBase();
 
 /**
  * APIパスを正規化（/api を一度だけ含むように）
@@ -57,7 +68,14 @@ export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   
   // パスを正規化（/api を一度だけ含む）
   const normalizedPath = normalizeApiPath(path);
-  const fullUrl = `${API_BASE}${normalizedPath}`;
+  // 絶対URLを構築（API_BASEとパスの間にスラッシュを1つだけ）
+  const fullUrl = `${API_BASE}${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`;
+  
+  // 絶対URLであることを検証
+  if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+    console.error('[apiFetchWithAuth] Invalid URL generated:', fullUrl);
+    throw new Error(`Invalid API URL: ${fullUrl}`);
+  }
   
   const res = await fetch(fullUrl, {
     ...init,
@@ -96,7 +114,14 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   
   // パスを正規化（/api を一度だけ含む）
   const normalizedPath = normalizeApiPath(path);
-  const fullUrl = `${API_BASE}${normalizedPath}`;
+  // 絶対URLを構築（API_BASEとパスの間にスラッシュを1つだけ）
+  const fullUrl = `${API_BASE}${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`;
+  
+  // 絶対URLであることを検証
+  if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+    console.error('[apiFetch] Invalid URL generated:', fullUrl);
+    throw new Error(`Invalid API URL: ${fullUrl}`);
+  }
   
   console.log('[apiFetch] Request URL:', fullUrl);
   console.log('[apiFetch] API_BASE:', API_BASE);
@@ -207,10 +232,21 @@ export async function adminLogin(idToken: string) {
   
   // パスを正規化
   const normalizedPath = normalizeApiPath('/api/auth/admin/login');
+  // 絶対URLを明示的に構築
   const fullUrl = `${API_BASE}${normalizedPath}`;
+  
+  // 絶対URLであることを検証
+  if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+    console.error('[adminLogin] Invalid URL generated:', fullUrl);
+    console.error('[adminLogin] API_BASE:', API_BASE);
+    console.error('[adminLogin] normalizedPath:', normalizedPath);
+    throw new Error(`Invalid API URL: ${fullUrl}. API_BASE must be an absolute URL.`);
+  }
+  
   console.log('[adminLogin] Request URL:', fullUrl);
   console.log('[adminLogin] API_BASE:', API_BASE);
   console.log('[adminLogin] Normalized path:', normalizedPath);
+  console.log('[adminLogin] NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
   
   // apiFetchを使用して統一（Authorizationヘッダーを手動で設定）
   const res = await apiFetch('/api/auth/admin/login', {
@@ -386,8 +422,17 @@ export async function uploadMedia(file: File): Promise<{ url: string; path?: str
     headers.set('Authorization', `Bearer ${token}`);
   }
   
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-  const res = await fetch(`${apiBase}/api/media/upload`, {
+  // 絶対URLを構築
+  const normalizedPath = normalizeApiPath('/api/media/upload');
+  const fullUrl = `${API_BASE}${normalizedPath}`;
+  
+  // 絶対URLであることを検証
+  if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+    console.error('[uploadMedia] Invalid URL generated:', fullUrl);
+    throw new Error(`Invalid API URL: ${fullUrl}`);
+  }
+  
+  const res = await fetch(fullUrl, {
     method: 'POST',
     headers,
     body: formData,
