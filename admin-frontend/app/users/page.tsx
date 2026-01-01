@@ -137,7 +137,7 @@ export default function UserManagePage() {
                       <button className="bg-red-500 text-white px-2 py-1 text-xs" onClick={() => reject(u.id)}>却下</button>
                     </>
                   )}
-                  {u.role === 'politician' && (
+                  {u.role?.toLowerCase() === 'politician' && (
                     <>
                       {!u.allowedEngagement ? (
                         <button className="bg-green-600 text-white px-2 py-1 text-xs" onClick={() => allowEngagement(u.id)}>投稿分析許可</button>

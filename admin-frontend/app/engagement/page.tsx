@@ -63,10 +63,12 @@ export default function EngagementPage() {
   }, []);
 
   // 閲覧許可条件（管理者または許可された議員）
-  const canSee = user?.role === 'admin' || user?.allowedEngagement;
+  const userRole = user?.role?.toLowerCase();
+  const canSee = userRole === 'admin' || user?.allowedEngagement;
+  console.log(`[Auth Check] Role: ${user?.role}, Normalized: ${userRole}, CanSee: ${canSee}`);
 
   let filteredPosts: PostAnalytics[] = Array.isArray(posts) ? posts : [];
-  if(user?.role === 'politician') {
+  if(userRole === 'politician') {
     filteredPosts = filteredPosts.filter(x => x.authorId === user.id);
   }
 

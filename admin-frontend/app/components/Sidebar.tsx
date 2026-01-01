@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
 
@@ -9,6 +9,12 @@ export default function Sidebar() {
   const [loading, setLoading] = useState(true);
   const [notificationCount, setNotificationCount] = useState<number>(0);
   const [reportCount, setReportCount] = useState<number>(0);
+  const userRef = useRef<{ role?: string; name?: string } | null>(null);
+
+  // userRefを最新のuserと同期
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -26,9 +32,12 @@ export default function Sidebar() {
         })
         .then(data => {
           console.log('[Sidebar] ユーザー情報取得成功:', data);
+          const role = data?.role?.toLowerCase();
+          const isAdmin = role === 'admin';
+          console.log(`[Auth Check] Role: ${data?.role}, Normalized: ${role}, Match: ${isAdmin}`);
           setUser(data);
           // ユーザー情報取得後に通報数を読み込む（管理者の場合）
-          if (data?.role === 'admin') {
+          if (isAdmin) {
             loadReportCount(token);
           }
         })
@@ -40,13 +49,13 @@ export default function Sidebar() {
       
       // 通知数を取得
       loadNotificationCount(token);
-      // 通報数を取得（管理者のみ）
-      if (user?.role === 'admin') {
-        loadReportCount(token);
-      }
+      
+      // 定期的に通知数と通報数を更新
       const interval = setInterval(() => {
         loadNotificationCount(token);
-        if (user?.role === 'admin') {
+        // userRefを使用して最新のuserを参照
+        const currentUser = userRef.current;
+        if (currentUser && currentUser.role?.toLowerCase() === 'admin') {
           loadReportCount(token);
         }
       }, 30000);
@@ -98,7 +107,7 @@ export default function Sidebar() {
           <p className="text-sm text-gray-300">ログイン中</p>
           <p className="font-semibold">{user.name || user.role}</p>
           <p className="text-xs text-gray-400">
-            {user.role === 'admin' ? '運営' : user.role === 'politician' ? '議員' : user.role}
+            {user.role?.toLowerCase() === 'admin' ? '運営' : user.role?.toLowerCase() === 'politician' ? '議員' : user.role}
           </p>
         </div>
       )}
@@ -115,11 +124,11 @@ export default function Sidebar() {
           )}
         </Link>
         {/* 投稿分析は管理者または許可された議員が使用可能 */}
-        {(user?.role === 'admin' || (user as any)?.allowedEngagement) && (
+        {(user && (user.role?.toLowerCase() === 'admin' || (user as any)?.allowedEngagement)) && (
           <Link href="/engagement" className="block hover:bg-gray-700 rounded p-2">投稿分析</Link>
         )}
         {/* 運営(admin)のみが議員登録、全投稿分析、ユーザー管理、通報一覧、通知送信を表示 */}
-        {user?.role === 'admin' && (
+        {user && user.role?.toLowerCase() === 'admin' && (
           <>
             <Link href="/users/register-politician" className="block hover:bg-gray-700 rounded p-2">議員登録</Link>
             <Link href="/users" className="block hover:bg-gray-700 rounded p-2">ユーザー管理</Link>
@@ -135,7 +144,7 @@ export default function Sidebar() {
           </>
         )}
         {/* 議員(politician)のみがプロフィール編集と政治資金管理を表示 */}
-        {user?.role === 'politician' && (
+        {user && user.role?.toLowerCase() === 'politician' && (
           <>
             <Link href="/politician/profile" className="block hover:bg-gray-700 rounded p-2">プロフィール編集</Link>
             <Link href="/politician/funds" className="block hover:bg-gray-700 rounded p-2">政治資金管理</Link>
@@ -157,7 +166,7 @@ export default function Sidebar() {
               議員ログイン
             </Link>
             {/* politicianログイン時は運営ログインボタンを非表示 */}
-            {(user as any)?.role !== 'politician' && (
+            {(!user || (user as any)?.role?.toLowerCase() !== 'politician') && (
               <Link href="/admin/login" className="block hover:bg-gray-700 rounded p-2 text-sm">
                 運営ログイン
               </Link>

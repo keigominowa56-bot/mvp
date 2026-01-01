@@ -20,7 +20,9 @@ export default function DashboardPage() {
       const postsData = await fetchPosts({ limit: 50 });
       
       // 議員の場合はフィルタリング
-      if (userData.role === 'politician') {
+      const userRole = userData.role?.toLowerCase();
+      console.log(`[Auth Check] Role: ${userData.role}, Normalized: ${userRole}`);
+      if (userRole === 'politician') {
         setPosts(postsData.filter(post => post.authorUserId === userData.id));
       } else {
         setPosts(postsData);
@@ -89,7 +91,7 @@ export default function DashboardPage() {
 
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">
-          {user?.role === 'politician' ? '自分の投稿' : 'すべての投稿'}
+          {user?.role?.toLowerCase() === 'politician' ? '自分の投稿' : 'すべての投稿'}
         </h2>
         {posts.length === 0 ? (
           <p className="text-gray-500">投稿がありません</p>

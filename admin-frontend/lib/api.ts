@@ -1,7 +1,7 @@
 // Admin Frontend API Client
 
-// APIベースURLを直接指定（末尾のスラッシュなし）
-export const API_BASE = 'https://api.polimee.com/api';
+// APIベースURL（環境変数を優先、末尾のスラッシュなし、/apiは含めない）
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
 
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});
@@ -15,12 +15,10 @@ export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
   
-  // パスから先頭の/apiを削除（API_BASEに既に/apiが含まれているため）
-  const normalizedPath = path.startsWith('/api/') ? path.substring(4) : path;
-  // パスの先頭にスラッシュを追加（ない場合）
-  const finalPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+  // パスに/apiを追加（API_BASEには/apiが含まれていないため）
+  const normalizedPath = path.startsWith('/api/') ? path : path.startsWith('/') ? `/api${path}` : `/api/${path}`;
   
-  const res = await fetch(`${API_BASE}${finalPath}`, {
+  const res = await fetch(`${API_BASE}${normalizedPath}`, {
     ...init,
     headers,
   });
@@ -121,7 +119,7 @@ export async function adminLogin(idToken: string) {
   const authHeader = idToken.startsWith('Bearer ') ? idToken : `Bearer ${idToken}`;
   console.log('[adminLogin] Authorization header:', `${authHeader.substring(0, 30)}...`);
   
-  const res = await fetch(`${API_BASE}/auth/admin/login`, {
+  const res = await fetch(`${API_BASE}/api/auth/admin/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
