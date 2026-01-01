@@ -1,28 +1,7 @@
 // Admin Frontend API Client
 
-// APIベースURL（環境変数のみを使用、末尾のスラッシュなし、/apiは含めない）
-function getApiBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
-  
-  // 環境変数が設定されていない場合はエラー
-  if (!base) {
-    const errorMsg = '[API] NEXT_PUBLIC_API_BASE_URL is not set. Please set it in your environment variables.';
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-  
-  // 絶対URLであることを保証（http:// または https:// で始まる）
-  if (!base.startsWith('http://') && !base.startsWith('https://')) {
-    const errorMsg = `[API] Invalid API_BASE format: ${base}. Must start with http:// or https://`;
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-  
-  // 末尾のスラッシュを削除
-  return base.replace(/\/+$/, '');
-}
-
-const API_BASE = getApiBase();
+// APIベースURL（固定値、末尾のスラッシュなし、/apiは含めない）
+const API_BASE = 'https://api.polimee.com';
 
 /**
  * APIパスを正規化（/api を一度だけ含むように）
@@ -240,29 +219,24 @@ export async function adminLogin(idToken: string) {
   const authHeader = idToken.startsWith('Bearer ') ? idToken : `Bearer ${idToken}`;
   console.log('[adminLogin] Authorization header:', `${authHeader.substring(0, 30)}...`);
   
-  // パスを正規化
-  const normalizedPath = normalizeApiPath('/api/auth/admin/login');
-  // 絶対URLを明示的に構築
-  const fullUrl = `${API_BASE}${normalizedPath}`;
+  // フルパスで絶対URLを構築（相対パスを避けるため）
+  const fullUrl = `${API_BASE}/api/auth/admin/login`;
   
   // 絶対URLであることを検証
   if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
     console.error('[adminLogin] Invalid URL generated:', fullUrl);
-    console.error('[adminLogin] API_BASE:', API_BASE);
-    console.error('[adminLogin] normalizedPath:', normalizedPath);
     throw new Error(`Invalid API URL: ${fullUrl}. API_BASE must be an absolute URL.`);
   }
   
   console.log('[adminLogin] Request URL:', fullUrl);
   console.log('[adminLogin] API_BASE:', API_BASE);
-  console.log('[adminLogin] Normalized path:', normalizedPath);
-  console.log('[adminLogin] NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
   
-  // apiFetchを使用して統一（Authorizationヘッダーを手動で設定）
-  const res = await apiFetch('/api/auth/admin/login', {
+  // 直接fetchを使用（フルパスで絶対URLを指定、相対パスによる衝突を回避）
+  const res = await fetch(fullUrl, {
     method: 'POST',
     headers: {
       'Authorization': authHeader,
+      'Content-Type': 'application/json',
     },
   });
   
