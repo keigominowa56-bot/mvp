@@ -68,7 +68,7 @@ export default function EngagementPage() {
   console.log(`[Auth Check] Role: ${user?.role}, Normalized: ${userRole}, CanSee: ${canSee}`);
 
   let filteredPosts: PostAnalytics[] = Array.isArray(posts) ? posts : [];
-  if(userRole === 'politician') {
+  if(userRole === 'politician' && user && user.id) {
     filteredPosts = filteredPosts.filter(x => x.authorId === user.id);
   }
 
