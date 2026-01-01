@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchCurrentUser, fetchPostAnalytics, type User } from '@/lib/api';
+import { fetchCurrentUser, fetchPostAnalytics } from '@/lib/api';
 
 type PostAnalytics = {
   id: string;
@@ -25,7 +25,7 @@ type PostAnalytics = {
 
 export default function EngagementPage() {
   const [posts, setPosts] = useState<PostAnalytics[]>([]);
-  const [user, setUser] = useState<User|null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<PostAnalytics | null>(null);
 
