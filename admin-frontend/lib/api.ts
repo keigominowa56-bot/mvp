@@ -28,7 +28,23 @@ function normalizeApiPath(path: string): string {
  * @returns Responseオブジェクト
  */
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
-  const headers = new Headers(init.headers || {});
+  const headers = new Headers();
+  
+  // init.headers をマージ（Headers オブジェクトまたは Record の両方に対応）
+  if (init.headers) {
+    if (init.headers instanceof Headers) {
+      init.headers.forEach((value, key) => {
+        headers.set(key, value);
+      });
+    } else {
+      Object.entries(init.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          headers.set(key, value);
+        }
+      });
+    }
+  }
+  
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
@@ -41,8 +57,9 @@ export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   
   // パスを正規化（/api を一度だけ含む）
   const normalizedPath = normalizeApiPath(path);
+  const fullUrl = `${API_BASE}${normalizedPath}`;
   
-  const res = await fetch(`${API_BASE}${normalizedPath}`, {
+  const res = await fetch(fullUrl, {
     ...init,
     headers,
   });
@@ -56,15 +73,36 @@ export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
  * @returns Responseオブジェクト
  */
 export async function apiFetch(path: string, init: RequestInit = {}) {
-  const headers = new Headers(init.headers || {});
+  const headers = new Headers();
+  
+  // init.headers をマージ（Headers オブジェクトまたは Record の両方に対応）
+  if (init.headers) {
+    if (init.headers instanceof Headers) {
+      init.headers.forEach((value, key) => {
+        headers.set(key, value);
+      });
+    } else {
+      Object.entries(init.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          headers.set(key, value);
+        }
+      });
+    }
+  }
+  
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
   
   // パスを正規化（/api を一度だけ含む）
   const normalizedPath = normalizeApiPath(path);
+  const fullUrl = `${API_BASE}${normalizedPath}`;
   
-  const res = await fetch(`${API_BASE}${normalizedPath}`, {
+  console.log('[apiFetch] Request URL:', fullUrl);
+  console.log('[apiFetch] API_BASE:', API_BASE);
+  console.log('[apiFetch] Normalized path:', normalizedPath);
+  
+  const res = await fetch(fullUrl, {
     ...init,
     headers,
   });
@@ -166,6 +204,13 @@ export async function adminLogin(idToken: string) {
   // Bearer プレフィックスが既に含まれているか確認
   const authHeader = idToken.startsWith('Bearer ') ? idToken : `Bearer ${idToken}`;
   console.log('[adminLogin] Authorization header:', `${authHeader.substring(0, 30)}...`);
+  
+  // パスを正規化
+  const normalizedPath = normalizeApiPath('/api/auth/admin/login');
+  const fullUrl = `${API_BASE}${normalizedPath}`;
+  console.log('[adminLogin] Request URL:', fullUrl);
+  console.log('[adminLogin] API_BASE:', API_BASE);
+  console.log('[adminLogin] Normalized path:', normalizedPath);
   
   // apiFetchを使用して統一（Authorizationヘッダーを手動で設定）
   const res = await apiFetch('/api/auth/admin/login', {
@@ -347,7 +392,7 @@ export async function uploadMedia(file: File): Promise<{ url: string; path?: str
     headers,
     body: formData,
   });
-  return unwrap<{ url: string }>(res);
+  return unwrap<{ url: string; path?: string }>(res);
 }
 
 // 政治資金一覧取得
