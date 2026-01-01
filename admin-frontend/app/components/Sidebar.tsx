@@ -105,9 +105,9 @@ export default function Sidebar() {
       {!loading && user && (
         <div className="bg-gray-700 p-3 rounded mb-2">
           <p className="text-sm text-gray-300">ログイン中</p>
-          <p className="font-semibold">{user.name || user.role}</p>
+          <p className="font-semibold">{user?.name || user?.role || 'ユーザー'}</p>
           <p className="text-xs text-gray-400">
-            {user.role?.toLowerCase() === 'admin' ? '運営' : user.role?.toLowerCase() === 'politician' ? '議員' : user.role}
+            {user?.role?.toLowerCase() === 'admin' ? '運営' : user?.role?.toLowerCase() === 'politician' ? '議員' : user?.role || '-'}
           </p>
         </div>
       )}

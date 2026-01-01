@@ -83,9 +83,9 @@ export default function DashboardPage() {
       {user && (
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-2">ユーザー情報</h2>
-          <p><strong>名前:</strong> {user.name}</p>
-          <p><strong>メール:</strong> {user.email}</p>
-          <p><strong>役割:</strong> {user.role}</p>
+          <p><strong>名前:</strong> {user?.name || '-'}</p>
+          <p><strong>メール:</strong> {user?.email || '-'}</p>
+          <p><strong>役割:</strong> {user?.role || '-'}</p>
         </div>
       )}
 
