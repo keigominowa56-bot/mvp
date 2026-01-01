@@ -112,6 +112,8 @@ export type User = {
   name: string;
   role: 'user' | 'politician' | 'admin';
   createdAt: string;
+  isPaidMember?: boolean;
+  allowedEngagement?: boolean;
 };
 
 // 投稿一覧取得
@@ -329,7 +331,7 @@ export async function updatePoliticianProfile(data: any): Promise<any> {
 }
 
 // メディアアップロード
-export async function uploadMedia(file: File): Promise<{ url: string }> {
+export async function uploadMedia(file: File): Promise<{ url: string; path?: string }> {
   const formData = new FormData();
   formData.append('file', file);
   

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchCurrentUser, fetchPostAnalytics } from '@/lib/api';
+import { fetchCurrentUser, fetchPostAnalytics, type User } from '@/lib/api';
 
 type PostAnalytics = {
   id: string;
@@ -22,7 +22,6 @@ type PostAnalytics = {
     }>;
   };
 };
-type User = { id: string; role: string; isPaidMember: boolean; allowedEngagement: boolean; };
 
 export default function EngagementPage() {
   const [posts, setPosts] = useState<PostAnalytics[]>([]);
