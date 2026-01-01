@@ -37,21 +37,18 @@ export default function AdminSignupPage() {
       await sendEmailVerification(userCredential.user);
 
       // バックエンドに管理者登録
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-      const signupUrl = `${apiBase}/api/auth/admin/signup`;
+      const { apiFetch } = await import('@/lib/api');
       
       // デバッグ用：実際のリクエストURLをコンソールに出力
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
       console.log('🚀 ===== SIGNUP REQUEST =====');
-      console.log('🚀 Sending request to:', signupUrl);
+      console.log('🚀 Sending request to:', `${apiBase}/api/auth/admin/signup`);
       console.log('🚀 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
       console.log('🚀 Expected backend:', apiBase);
       console.log('🚀 ============================');
       
-      const res = await fetch(signupUrl, {
+      const res = await apiFetch('/api/auth/admin/signup', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email, password })
       });
 

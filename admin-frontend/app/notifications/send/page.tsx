@@ -1,7 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+import { sendNotification } from '@/lib/api';
 
 export default function SendNotificationPage() {
   const [title, setTitle] = useState('');
@@ -33,46 +32,35 @@ export default function SendNotificationPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/admin/notifications/send`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          body,
+      await sendNotification({
+        title,
+        body,
+        ...(Object.keys(filters).some(k => filters[k as keyof typeof filters] !== '') && {
           filters: Object.fromEntries(
             Object.entries(filters).filter(([_, v]) => v !== '')
           ),
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setMessage({ 
-          type: 'success', 
-          text: `通知を${data.count || 0}人のユーザーに送信しました` 
-        });
-        setTitle('');
-        setBody('');
-        setFilters({
-          role: '',
-          addressPref: '',
-          addressCity: '',
-          ageGroup: '',
-          supportedPartyId: '',
-        });
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        setMessage({ 
-          type: 'error', 
-          text: errorData.message || '通知の送信に失敗しました' 
-        });
-      }
-    } catch (err) {
+      setMessage({ 
+        type: 'success', 
+        text: '通知を送信しました' 
+      });
+      setTitle('');
+      setBody('');
+      setFilters({
+        role: '',
+        addressPref: '',
+        addressCity: '',
+        ageGroup: '',
+        supportedPartyId: '',
+      });
+    } catch (err: any) {
       console.error('通知送信エラー:', err);
-      setMessage({ type: 'error', text: '通知の送信に失敗しました' });
+      setMessage({ 
+        type: 'error', 
+        text: err.message || '通知の送信に失敗しました' 
+      });
     } finally {
       setLoading(false);
     }

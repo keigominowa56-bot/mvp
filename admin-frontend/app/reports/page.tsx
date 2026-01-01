@@ -1,7 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+import { fetchReports } from '@/lib/api';
 
 type Report = {
   id: string;
@@ -35,16 +34,9 @@ export default function ReportsPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/admin/reports`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setReports(Array.isArray(data) ? data : []);
-        setReportCount(Array.isArray(data) ? data.length : 0);
-      }
+      const data = await fetchReports();
+      setReports(data);
+      setReportCount(data.length);
     } catch (err) {
       console.error('通報一覧の取得に失敗:', err);
     } finally {

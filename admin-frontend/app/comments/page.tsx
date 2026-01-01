@@ -1,7 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+import { fetchComments, fetchPostComments, apiFetchWithAuth, unwrap } from '@/lib/api';
 
 type Comment = {
   id: string;
@@ -36,34 +35,21 @@ export default function CommentsPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/admin/comments`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setComments(Array.isArray(data) ? data.map((c: any) => ({
-          id: c.id,
-          postId: c.post?.id || c.postId,
-          postTitle: c.post?.title || '投稿が見つかりません',
-          content: c.content,
-          author: c.author?.name || c.authorUserId?.slice(0, 8) || 'ユーザー',
-          authorUserId: c.authorUserId,
-          createdAt: c.createdAt,
-          parentId: c.parentId,
-          children: c.children || [],
-        })) : []);
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        setMsg(errorData.message || 'コメントの取得に失敗しました');
-      }
-    } catch (err) {
+      const data = await fetchComments();
+      setComments(Array.isArray(data) ? data.map((c: any) => ({
+        id: c.id,
+        postId: c.post?.id || c.postId,
+        postTitle: c.post?.title || '投稿が見つかりません',
+        content: c.content,
+        author: c.author?.name || c.authorUserId?.slice(0, 8) || 'ユーザー',
+        authorUserId: c.authorUserId,
+        createdAt: c.createdAt,
+        parentId: c.parentId,
+        children: c.children || [],
+      })) : []);
+    } catch (err: any) {
       console.error('コメント読み込みエラー:', err);
-      setMsg('コメントの取得に失敗しました');
+      setMsg(err.message || 'コメントの取得に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -79,12 +65,8 @@ export default function CommentsPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
+      const res = await apiFetchWithAuth(`/api/posts/${postId}/comments`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           content: replyText,
           parentId: commentId,
@@ -97,12 +79,12 @@ export default function CommentsPage() {
         setMsg('返信を送信しました');
         await loadComments();
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        setMsg(errorData.message || '返信の送信に失敗しました');
+        const errorData = await unwrap(res).catch(() => ({}));
+        setMsg((errorData as any)?.message || '返信の送信に失敗しました');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('返信エラー:', err);
-      setMsg('返信の送信に失敗しました');
+      setMsg(err.message || '返信の送信に失敗しました');
     } finally {
       setSubmitting(false);
     }

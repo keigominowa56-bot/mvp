@@ -1,8 +1,32 @@
 // Admin Frontend API Client
 
 // APIベースURL（環境変数を優先、末尾のスラッシュなし、/apiは含めない）
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
 
+/**
+ * APIパスを正規化（/api を一度だけ含むように）
+ * @param path APIパス（例: '/api/auth/me' または '/auth/me'）
+ * @returns 正規化されたパス（例: '/api/auth/me'）
+ */
+function normalizeApiPath(path: string): string {
+  // 既に /api/ で始まっている場合はそのまま
+  if (path.startsWith('/api/')) {
+    return path;
+  }
+  // / で始まっている場合は /api を前に追加
+  if (path.startsWith('/')) {
+    return `/api${path}`;
+  }
+  // それ以外は /api/ を前に追加
+  return `/api/${path}`;
+}
+
+/**
+ * 認証付きAPIリクエストを送信
+ * @param path APIパス（/api を含めても含めなくても正規化される）
+ * @param init リクエストオプション
+ * @returns Responseオブジェクト
+ */
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});
   if (init.body && !headers.has('Content-Type')) {
@@ -15,8 +39,30 @@ export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
   
-  // パスに/apiを追加（API_BASEには/apiが含まれていないため）
-  const normalizedPath = path.startsWith('/api/') ? path : path.startsWith('/') ? `/api${path}` : `/api/${path}`;
+  // パスを正規化（/api を一度だけ含む）
+  const normalizedPath = normalizeApiPath(path);
+  
+  const res = await fetch(`${API_BASE}${normalizedPath}`, {
+    ...init,
+    headers,
+  });
+  return res;
+}
+
+/**
+ * 認証なしAPIリクエストを送信（ログイン時など）
+ * @param path APIパス（/api を含めても含めなくても正規化される）
+ * @param init リクエストオプション
+ * @returns Responseオブジェクト
+ */
+export async function apiFetch(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers || {});
+  if (init.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  
+  // パスを正規化（/api を一度だけ含む）
+  const normalizedPath = normalizeApiPath(path);
   
   const res = await fetch(`${API_BASE}${normalizedPath}`, {
     ...init,
@@ -119,10 +165,10 @@ export async function adminLogin(idToken: string) {
   const authHeader = idToken.startsWith('Bearer ') ? idToken : `Bearer ${idToken}`;
   console.log('[adminLogin] Authorization header:', `${authHeader.substring(0, 30)}...`);
   
-  const res = await fetch(`${API_BASE}/api/auth/admin/login`, {
+  // apiFetchを使用して統一（Authorizationヘッダーを手動で設定）
+  const res = await apiFetch('/api/auth/admin/login', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': authHeader,
     },
   });
@@ -159,4 +205,179 @@ export async function registerPolitician(data: {
     body: JSON.stringify(data),
   });
   return unwrap<User>(res);
+}
+
+// 通知数取得
+export async function fetchNotificationCount(): Promise<number> {
+  const res = await apiFetchWithAuth('/api/notifications/count', {
+    method: 'GET',
+  });
+  const data = await unwrap<{ count: number }>(res);
+  return data.count || 0;
+}
+
+// 通報一覧取得（管理者専用）
+export async function fetchReports(params?: {
+  status?: string;
+  limit?: number;
+}): Promise<any[]> {
+  const query = new URLSearchParams();
+  if (params?.status) query.set('status', params.status);
+  if (params?.limit) query.set('limit', String(params.limit));
+  
+  const res = await apiFetchWithAuth(`/api/admin/reports${query.toString() ? `?${query.toString()}` : ''}`, {
+    method: 'GET',
+  });
+  const data = await unwrap<any[]>(res);
+  return Array.isArray(data) ? data : [];
+}
+
+// ユーザー一覧取得（管理者専用）
+export async function fetchUsers(): Promise<any[]> {
+  const res = await apiFetchWithAuth('/api/admin/users', {
+    method: 'GET',
+  });
+  return unwrap<any[]>(res);
+}
+
+// ユーザー承認（管理者専用）
+export async function approveUser(userId: string): Promise<void> {
+  const res = await apiFetchWithAuth(`/api/admin/users/${userId}/approve`, {
+    method: 'POST',
+  });
+  await unwrap(res);
+}
+
+// ユーザー却下（管理者専用）
+export async function rejectUser(userId: string): Promise<void> {
+  const res = await apiFetchWithAuth(`/api/admin/users/${userId}/reject`, {
+    method: 'POST',
+  });
+  await unwrap(res);
+}
+
+// 投稿分析許可（管理者専用）
+export async function allowEngagement(userId: string): Promise<void> {
+  const res = await apiFetchWithAuth(`/api/admin/users/${userId}/allow-engagement`, {
+    method: 'POST',
+  });
+  await unwrap(res);
+}
+
+// 投稿分析解除（管理者専用）
+export async function revokeEngagement(userId: string): Promise<void> {
+  const res = await apiFetchWithAuth(`/api/admin/users/${userId}/revoke-engagement`, {
+    method: 'POST',
+  });
+  await unwrap(res);
+}
+
+// 投稿分析データ取得
+export async function fetchPostAnalytics(): Promise<any[]> {
+  const res = await apiFetchWithAuth('/api/admin/posts/analytics', {
+    method: 'GET',
+  });
+  const data = await unwrap<any[]>(res);
+  return Array.isArray(data) ? data : [];
+}
+
+// コメント一覧取得（管理者専用）
+export async function fetchComments(): Promise<any[]> {
+  const res = await apiFetchWithAuth('/api/admin/comments', {
+    method: 'GET',
+  });
+  return unwrap<any[]>(res);
+}
+
+// 投稿のコメント取得
+export async function fetchPostComments(postId: string): Promise<any[]> {
+  const res = await apiFetchWithAuth(`/api/posts/${postId}/comments`, {
+    method: 'GET',
+  });
+  return unwrap<any[]>(res);
+}
+
+// 通知送信（管理者専用）
+export async function sendNotification(data: {
+  title: string;
+  body: string;
+  targetUserId?: string;
+  filters?: Record<string, string>;
+}): Promise<void> {
+  const res = await apiFetchWithAuth('/api/admin/notifications/send', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  await unwrap(res);
+}
+
+// 議員プロフィール取得
+export async function fetchPoliticianProfile(): Promise<any> {
+  const res = await apiFetchWithAuth('/api/politician/profile', {
+    method: 'GET',
+  });
+  return unwrap<any>(res);
+}
+
+// 議員プロフィール更新
+export async function updatePoliticianProfile(data: any): Promise<any> {
+  const res = await apiFetchWithAuth('/api/politician/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return unwrap<any>(res);
+}
+
+// メディアアップロード
+export async function uploadMedia(file: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const token = localStorage.getItem('auth_token');
+  const headers = new Headers();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+  const res = await fetch(`${apiBase}/api/media/upload`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  return unwrap<{ url: string }>(res);
+}
+
+// 政治資金一覧取得
+export async function fetchPoliticalFunds(): Promise<any[]> {
+  const res = await apiFetchWithAuth('/api/politician/funds', {
+    method: 'GET',
+  });
+  return unwrap<any[]>(res);
+}
+
+// 政治資金作成
+export async function createPoliticalFund(data: any): Promise<any> {
+  const res = await apiFetchWithAuth('/api/politician/funds', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return unwrap<any>(res);
+}
+
+// 政治資金更新
+export async function updatePoliticalFund(id: string, data: any): Promise<any> {
+  const res = await apiFetchWithAuth(`/api/politician/funds/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return unwrap<any>(res);
+}
+
+// 政治資金削除
+export async function deletePoliticalFund(id: string): Promise<void> {
+  const res = await apiFetchWithAuth(`/api/politician/funds/${id}`, {
+    method: 'DELETE',
+  });
+  await unwrap<void>(res);
 }

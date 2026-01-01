@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { apiFetch, unwrap } from '@/lib/api';
 
 export default function PoliticianSignupPage() {
   const [form, setForm] = useState({ email: '', password: '', name: '', regionId: '', partyId: '' });
@@ -7,17 +8,19 @@ export default function PoliticianSignupPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg('');
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    const res = await fetch(`${apiBase}/api/auth/politician/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if(res.ok) {
-      setMsg('新規登録成功！ログインしてください。');
-      setForm({ email: '', password: '', name: '', regionId: '', partyId: '' });
-    } else {
-      const err = await res.json().catch(()=> ({}));
+    try {
+      const res = await apiFetch('/api/auth/politician/signup', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      if(res.ok) {
+        setMsg('新規登録成功！ログインしてください。');
+        setForm({ email: '', password: '', name: '', regionId: '', partyId: '' });
+      } else {
+        const err = await unwrap(res).catch(()=> ({}));
+        setMsg((err as any)?.message || '新規登録失敗');
+      }
+    } catch (err: any) {
       setMsg(err.message || '新規登録失敗');
     }
   }

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { fetchCurrentUser, fetchPostAnalytics } from '@/lib/api';
 
 type PostAnalytics = {
   id: string;
@@ -36,23 +37,18 @@ export default function EngagementPage() {
       return;
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    fetch(`${apiBase}/api/auth/me`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(data => setUser(data));
+    // ユーザー情報取得
+    fetchCurrentUser()
+      .then(data => setUser(data))
+      .catch(err => {
+        console.error('ユーザー情報取得に失敗:', err);
+        setUser(null);
+      });
     
-    fetch(`${apiBase}/api/admin/posts/analytics`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
+    // 投稿分析データ取得
+    fetchPostAnalytics()
       .then(data => {
-        // データが配列であることを確認
-        const postsArray = Array.isArray(data) ? data : [];
-        setPosts(postsArray);
+        setPosts(data);
         setLoading(false);
       })
       .catch(err => {

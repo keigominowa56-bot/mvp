@@ -1,8 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+import { fetchCurrentUser, fetchNotificationCount, fetchReports } from '@/lib/api';
 
 export default function Sidebar() {
   const [user, setUser] = useState<{ role?: string; name?: string } | null>(null);
@@ -19,17 +18,8 @@ export default function Sidebar() {
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (token) {
-      fetch(`${API_BASE}/api/auth/me`, { 
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-        .then(res => {
-          if (res.ok) {
-            return res.json();
-          }
-          throw new Error('Failed to fetch user');
-        })
+      // ユーザー情報取得
+      fetchCurrentUser()
         .then(data => {
           console.log('[Sidebar] ユーザー情報取得成功:', data);
           const role = data?.role?.toLowerCase();
@@ -38,7 +28,7 @@ export default function Sidebar() {
           setUser(data);
           // ユーザー情報取得後に通報数を読み込む（管理者の場合）
           if (isAdmin) {
-            loadReportCount(token);
+            loadReportCount();
           }
         })
         .catch(err => {
@@ -48,15 +38,15 @@ export default function Sidebar() {
         .finally(() => setLoading(false));
       
       // 通知数を取得
-      loadNotificationCount(token);
+      loadNotificationCount();
       
       // 定期的に通知数と通報数を更新
       const interval = setInterval(() => {
-        loadNotificationCount(token);
+        loadNotificationCount();
         // userRefを使用して最新のuserを参照
         const currentUser = userRef.current;
         if (currentUser && currentUser.role?.toLowerCase() === 'admin') {
-          loadReportCount(token);
+          loadReportCount();
         }
       }, 30000);
       return () => clearInterval(interval);
@@ -65,31 +55,23 @@ export default function Sidebar() {
     }
   }, []);
 
-  async function loadNotificationCount(token: string) {
+  async function loadNotificationCount() {
     try {
-      const res = await fetch(`${API_BASE}/api/notifications/count`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNotificationCount(data.count || 0);
-      }
+      const count = await fetchNotificationCount();
+      setNotificationCount(count);
     } catch (err) {
       // エラーは無視
+      console.error('[Sidebar] 通知数取得失敗:', err);
     }
   }
 
-  async function loadReportCount(token: string) {
+  async function loadReportCount() {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/reports?status=pending&limit=100`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setReportCount(Array.isArray(data) ? data.length : 0);
-      }
+      const reports = await fetchReports({ status: 'pending', limit: 100 });
+      setReportCount(reports.length);
     } catch (err) {
       // エラーは無視
+      console.error('[Sidebar] 通報数取得失敗:', err);
     }
   }
 

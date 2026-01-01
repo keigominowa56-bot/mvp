@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+import { fetchPoliticianProfile, updatePoliticianProfile, uploadMedia } from '@/lib/api';
 
 export default function PoliticianProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -33,16 +33,8 @@ export default function PoliticianProfilePage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/politician/profile`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const data = await fetchPoliticianProfile();
         setFormData({
           name: data.name || '',
           district: data.district || '',
@@ -54,12 +46,13 @@ export default function PoliticianProfilePage() {
           facebookUrl: data.socialLinks?.facebook || '',
           instagramUrl: data.socialLinks?.instagram || '',
         });
-      } else if (res.status === 404) {
-        // プロフィールが存在しない場合は新規作成モード
-        console.log('プロフィールが存在しません。新規作成モードです。');
-      } else {
-        const error = await res.json().catch(() => ({}));
-        setMsg(error.message || 'プロフィールの読み込みに失敗しました');
+      } catch (err: any) {
+        if (err.status === 404) {
+          // プロフィールが存在しない場合は新規作成モード
+          console.log('プロフィールが存在しません。新規作成モードです。');
+        } else {
+          setMsg(err.message || 'プロフィールの読み込みに失敗しました');
+        }
       }
     } catch (err: any) {
       console.error('プロフィール読み込みエラー:', err);
@@ -89,35 +82,20 @@ export default function PoliticianProfilePage() {
       if (formData.facebookUrl) socialLinks.facebook = formData.facebookUrl;
       if (formData.instagramUrl) socialLinks.instagram = formData.instagramUrl;
 
-      const res = await fetch(`${API_BASE}/api/politician/profile`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          profileImageUrl: formData.profileImageUrl,
-          district: formData.district,
-          party: formData.party,
-          bio: formData.bio,
-          pledges: formData.pledges,
-          socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined,
-        }),
+      await updatePoliticianProfile({
+        name: formData.name,
+        profileImageUrl: formData.profileImageUrl,
+        district: formData.district,
+        party: formData.party,
+        bio: formData.bio,
+        pledges: formData.pledges,
+        socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined,
       });
 
-      if (res.ok) {
-        setMsg('プロフィールを保存しました');
-        setSuccess('プロフィールを保存しました');
-        setError(null);
-        await loadProfile();
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData.message || '保存に失敗しました';
-        setMsg(errorMessage);
-        setError(errorMessage);
-        setSuccess(null);
-      }
+      setMsg('プロフィールを保存しました');
+      setSuccess('プロフィールを保存しました');
+      setError(null);
+      await loadProfile();
     } catch (err: any) {
       console.error('保存エラー:', err);
       setMsg(err.message || '保存に失敗しました');
@@ -192,23 +170,10 @@ export default function PoliticianProfilePage() {
                   }
                   
                   try {
-                    const res = await fetch(`${API_BASE}/api/media/upload`, {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                      },
-                      body: uploadFormData,
-                    });
-                    
-                    if (!res.ok) {
-                      const errorData = await res.json().catch(() => ({}));
-                      throw new Error(errorData.message || 'アップロードに失敗しました');
-                    }
-                    
-                    const data = await res.json();
-                    // アップロードされた画像のURLを設定（フルパス）
+                    const data = await uploadMedia(file);
                     const imageUrl = data.url || data.path || '';
-                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${API_BASE}${imageUrl}`;
+                    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${apiBase}${imageUrl}`;
                     setFormData(prev => ({ ...prev, profileImageUrl: fullUrl }));
                     setSuccess('画像をアップロードしました');
                     setError(null);

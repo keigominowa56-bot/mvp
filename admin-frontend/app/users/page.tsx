@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { fetchUsers, approveUser, rejectUser, allowEngagement, revokeEngagement } from '@/lib/api';
 
 type User = {
   id: string;
@@ -20,85 +21,59 @@ export default function UserManagePage() {
       setMsg('ログインが必要です');
       return;
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    fetch(`${apiBase}/api/admin/users`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(setUsers);
+    fetchUsers()
+      .then(setUsers)
+      .catch(err => {
+        console.error('ユーザー一覧取得に失敗:', err);
+        setMsg('ユーザー一覧の取得に失敗しました');
+      });
   }, []);
 
-  function approve(id: string) {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setMsg('ログインが必要です');
-      return;
+  async function approve(id: string) {
+    try {
+      await approveUser(id);
+      setMsg('承認しました');
+      setUsers(us => us.map(u => u.id === id ? { ...u, status: 'approved' } : u));
+    } catch (err) {
+      setMsg('承認に失敗しました');
+      console.error('承認エラー:', err);
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    fetch(`${apiBase}/api/admin/users/${id}/approve`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(res => setMsg(res?.ok ? '承認しました' : '失敗'))
-      .then(() => setUsers(us => us.map(u => u.id === id ? { ...u, status: 'approved' } : u)));
   }
-  function reject(id: string) {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setMsg('ログインが必要です');
-      return;
+  
+  async function reject(id: string) {
+    try {
+      await rejectUser(id);
+      setMsg('却下しました');
+      setUsers(us => us.map(u => u.id === id ? { ...u, status: 'rejected' } : u));
+    } catch (err) {
+      setMsg('却下に失敗しました');
+      console.error('却下エラー:', err);
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    fetch(`${apiBase}/api/admin/users/${id}/reject`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(res => setMsg(res?.ok ? '却下しました' : '失敗'))
-      .then(() => setUsers(us => us.map(u => u.id === id ? { ...u, status: 'rejected' } : u)));
   }
-  function allowEngagement(id: string) {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setMsg('ログインが必要です');
-      return;
+  
+  async function allowEngagementForUser(id: string) {
+    try {
+      await allowEngagement(id);
+      setMsg('投稿分析を許可しました');
+      setUsers(us => us.map(u => u.id === id ? { ...u, allowedEngagement: true } : u));
+      setTimeout(() => setMsg(''), 3000);
+    } catch (err) {
+      setMsg('投稿分析許可に失敗しました');
+      console.error('投稿分析許可エラー:', err);
     }
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    fetch(`${apiBase}/api/admin/users/${id}/allow-engagement`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(res => setMsg(res?.ok ? '投稿分析を許可しました' : '失敗'))
-      .then(() => {
-        setUsers(us => us.map(u => u.id === id ? { ...u, allowedEngagement: true } : u));
-        setTimeout(() => setMsg(''), 3000);
-      });
   }
-  function revokeEngagement(id: string) {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setMsg('ログインが必要です');
-      return;
-    }
+  
+  async function revokeEngagementForUser(id: string) {
     if (!confirm('投稿分析の許可を解除しますか？')) return;
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
-    fetch(`${apiBase}/api/admin/users/${id}/revoke-engagement`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(res => setMsg(res?.ok ? '投稿分析の許可を解除しました' : '失敗'))
-      .then(() => {
-        setUsers(us => us.map(u => u.id === id ? { ...u, allowedEngagement: false } : u));
-        setTimeout(() => setMsg(''), 3000);
-      });
+    try {
+      await revokeEngagement(id);
+      setMsg('投稿分析の許可を解除しました');
+      setUsers(us => us.map(u => u.id === id ? { ...u, allowedEngagement: false } : u));
+      setTimeout(() => setMsg(''), 3000);
+    } catch (err) {
+      setMsg('投稿分析解除に失敗しました');
+      console.error('投稿分析解除エラー:', err);
+    }
   }
 
   return (
@@ -140,9 +115,9 @@ export default function UserManagePage() {
                   {u.role?.toLowerCase() === 'politician' && (
                     <>
                       {!u.allowedEngagement ? (
-                        <button className="bg-green-600 text-white px-2 py-1 text-xs" onClick={() => allowEngagement(u.id)}>投稿分析許可</button>
+                        <button className="bg-green-600 text-white px-2 py-1 text-xs" onClick={() => allowEngagementForUser(u.id)}>投稿分析許可</button>
                       ) : (
-                        <button className="bg-orange-600 text-white px-2 py-1 text-xs" onClick={() => revokeEngagement(u.id)}>投稿分析解除</button>
+                        <button className="bg-orange-600 text-white px-2 py-1 text-xs" onClick={() => revokeEngagementForUser(u.id)}>投稿分析解除</button>
                       )}
                     </>
                   )}

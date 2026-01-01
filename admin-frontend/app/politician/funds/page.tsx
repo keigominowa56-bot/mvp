@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+import { fetchPoliticalFunds, createPoliticalFund, updatePoliticalFund, deletePoliticalFund } from '@/lib/api';
 
 type PoliticalFund = {
   id: string;
@@ -40,22 +39,11 @@ export default function PoliticalFundsPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/politician/funds`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setFunds(Array.isArray(data) ? data : []);
-      } else {
-        setMsg('政治資金の取得に失敗しました');
-      }
-    } catch (err) {
+      const data = await fetchPoliticalFunds();
+      setFunds(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('政治資金読み込みエラー:', err);
-      setMsg('政治資金の取得に失敗しました');
+      setMsg(err.message || '政治資金の取得に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -81,30 +69,17 @@ export default function PoliticalFundsPage() {
         notes: formData.notes || null,
       };
 
-      const url = editingId
-        ? `${API_BASE}/api/politician/funds/${editingId}`
-        : `${API_BASE}/api/politician/funds`;
-      const method = editingId ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        setMsg(editingId ? '政治資金を更新しました' : '政治資金を登録しました');
-        setFormData({ purpose: '', amount: '', date: '', category: '', notes: '' });
-        setShowForm(false);
-        setEditingId(null);
-        await loadFunds();
+      if (editingId) {
+        await updatePoliticalFund(editingId, payload);
+        setMsg('政治資金を更新しました');
       } else {
-        const error = await res.json().catch(() => ({}));
-        setMsg(error.message || '保存に失敗しました');
+        await createPoliticalFund(payload);
+        setMsg('政治資金を登録しました');
       }
+      setFormData({ purpose: '', amount: '', date: '', category: '', notes: '' });
+      setShowForm(false);
+      setEditingId(null);
+      await loadFunds();
     } catch (err: any) {
       console.error('保存エラー:', err);
       setMsg(err.message || '保存に失敗しました');
@@ -123,20 +98,9 @@ export default function PoliticalFundsPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/politician/funds/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        setMsg('政治資金を削除しました');
-        await loadFunds();
-      } else {
-        const error = await res.json().catch(() => ({}));
-        setMsg(error.message || '削除に失敗しました');
-      }
+      await deletePoliticalFund(id);
+      setMsg('政治資金を削除しました');
+      await loadFunds();
     } catch (err: any) {
       console.error('削除エラー:', err);
       setMsg(err.message || '削除に失敗しました');
