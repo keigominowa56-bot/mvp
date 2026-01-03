@@ -4,6 +4,28 @@
 const API_BASE = 'https://api.polimee.com';
 
 /**
+ * 画像URLを絶対URLに変換
+ * 相対パス（/uploads/...）の場合はAPI_BASEと結合
+ * 既に絶対URLの場合はそのまま返す
+ * @param url 画像URL（相対パスまたは絶対URL）
+ * @returns 絶対URL
+ */
+export function getImageUrl(url?: string | null): string {
+  if (!url) return '';
+  // 既に絶対URLの場合はそのまま返す
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // 相対パスの場合はAPI_BASEと結合
+  // /uploads/... のような形式の場合
+  if (url.startsWith('/')) {
+    return `${API_BASE}${url}`;
+  }
+  // それ以外もAPI_BASEと結合
+  return `${API_BASE}/${url}`;
+}
+
+/**
  * APIパスを正規化（/api を一度だけ含むように）
  * @param path APIパス（例: '/api/auth/me' または '/auth/me'）
  * @returns 正規化されたパス（例: '/api/auth/me'）

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { fetchPoliticianProfile, updatePoliticianProfile, uploadMedia } from '@/lib/api';
+import { fetchPoliticianProfile, updatePoliticianProfile, uploadMedia, getImageUrl } from '@/lib/api';
 
 export default function PoliticianProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -131,7 +131,7 @@ export default function PoliticianProfilePage() {
             <div>
               {formData.profileImageUrl ? (
                 <img
-                  src={formData.profileImageUrl}
+                  src={getImageUrl(formData.profileImageUrl)}
                   alt="プロフィール画像"
                   className="w-24 h-24 rounded-full object-cover border"
                 />
@@ -172,8 +172,8 @@ export default function PoliticianProfilePage() {
                   try {
                     const data = await uploadMedia(file, 'avatar');
                     const imageUrl = data.url || data.path || '';
-                    // 画像URLが相対パスの場合はそのまま使用（APIサーバーが返すURLを信頼）
-                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : imageUrl;
+                    // 画像URLを絶対URLに変換
+                    const fullUrl = getImageUrl(imageUrl);
                     setFormData(prev => ({ ...prev, profileImageUrl: fullUrl }));
                     setSuccess('画像をアップロードしました');
                     setError(null);
