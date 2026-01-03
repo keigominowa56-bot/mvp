@@ -53,9 +53,8 @@ const nextConfig = {
 
   // 環境変数のデフォルト値を設定
   env: {
-    // API Base URL のデフォルト値を設定
-    // 本番環境では HTTPS を使用し、ポート番号は不要です
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com',
+    // API Base URL（固定値、環境変数は使用しない）
+    NEXT_PUBLIC_API_BASE_URL: 'https://api.polimee.com',
   },
 };
 

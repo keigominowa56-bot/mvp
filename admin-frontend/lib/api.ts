@@ -112,10 +112,6 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
     throw new Error(`Invalid API URL: ${fullUrl}`);
   }
   
-  console.log('[apiFetch] Request URL:', fullUrl);
-  console.log('[apiFetch] API_BASE:', API_BASE);
-  console.log('[apiFetch] Normalized path:', normalizedPath);
-  
   const res = await fetch(fullUrl, {
     ...init,
     headers,
@@ -228,16 +224,12 @@ export async function fetchCurrentUser(): Promise<User> {
 
 // 管理者ログイン（Firebase IDトークンを使用）
 export async function adminLogin(idToken: string) {
-  console.log('[adminLogin] Calling API with token length:', idToken?.length || 0);
-  console.log('[adminLogin] Token preview:', idToken ? `${idToken.substring(0, 20)}...` : 'undefined');
-  
   if (!idToken) {
     throw new Error('Firebase IDトークンが取得できませんでした');
   }
   
   // Bearer プレフィックスが既に含まれているか確認
   const authHeader = idToken.startsWith('Bearer ') ? idToken : `Bearer ${idToken}`;
-  console.log('[adminLogin] Authorization header:', `${authHeader.substring(0, 30)}...`);
   
   // フルパスで絶対URLを構築（相対パスを避けるため）
   const fullUrl = `${API_BASE}/api/auth/admin/login`;
@@ -248,9 +240,6 @@ export async function adminLogin(idToken: string) {
     throw new Error(`Invalid API URL: ${fullUrl}. API_BASE must be an absolute URL.`);
   }
   
-  console.log('[adminLogin] Request URL:', fullUrl);
-  console.log('[adminLogin] API_BASE:', API_BASE);
-  
   // 直接fetchを使用（フルパスで絶対URLを指定、相対パスによる衝突を回避）
   const res = await fetch(fullUrl, {
     method: 'POST',
@@ -260,7 +249,6 @@ export async function adminLogin(idToken: string) {
     },
   });
   
-  console.log('[adminLogin] Response status:', res.status);
   return unwrap(res);
 }
 
