@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchPosts, fetchCurrentUser, deletePost, type Post, type User } from '@/lib/api';
+import { fetchPosts, fetchCurrentUser, deletePost, isPolitician, type Post, type User } from '@/lib/api';
 
 export default function DashboardPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -20,9 +20,8 @@ export default function DashboardPage() {
       const postsData = await fetchPosts({ limit: 50 });
       
       // 議員の場合はフィルタリング
-      const userRole = userData.role?.toLowerCase();
-      console.log(`[Auth Check] Role: ${userData.role}, Normalized: ${userRole}`);
-      if (userRole === 'politician') {
+      console.log(`[Auth Check] Role: ${userData.role}`);
+      if (isPolitician(userData.role)) {
         setPosts(postsData.filter(post => post.authorUserId === userData.id));
       } else {
         setPosts(postsData);
@@ -91,7 +90,7 @@ export default function DashboardPage() {
 
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">
-          {user?.role?.toLowerCase() === 'politician' ? '自分の投稿' : 'すべての投稿'}
+          {isPolitician(user?.role) ? '自分の投稿' : 'すべての投稿'}
         </h2>
         {posts.length === 0 ? (
           <p className="text-gray-500">投稿がありません</p>

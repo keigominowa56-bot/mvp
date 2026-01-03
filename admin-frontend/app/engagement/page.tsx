@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchCurrentUser, fetchPostAnalytics } from '@/lib/api';
+import { fetchCurrentUser, fetchPostAnalytics, isAdmin, isPolitician } from '@/lib/api';
 
 type PostAnalytics = {
   id: string;
@@ -58,12 +58,11 @@ export default function EngagementPage() {
   }, []);
 
   // 閲覧許可条件（管理者または許可された議員）
-  const userRole = user?.role?.toLowerCase();
-  const canSee = userRole === 'admin' || user?.allowedEngagement;
-  console.log(`[Auth Check] Role: ${user?.role}, Normalized: ${userRole}, CanSee: ${canSee}`);
+  const canSee = isAdmin(user?.role) || user?.allowedEngagement;
+  console.log(`[Auth Check] Role: ${user?.role}, CanSee: ${canSee}`);
 
   let filteredPosts: PostAnalytics[] = Array.isArray(posts) ? posts : [];
-  if(userRole === 'politician' && user?.id) {
+  if(isPolitician(user?.role) && user?.id) {
     const userId = user.id; // user?.id チェック後なので安全
     filteredPosts = filteredPosts.filter(x => x.authorId === userId);
   }

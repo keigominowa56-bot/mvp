@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
-import { fetchCurrentUser, fetchNotificationCount, fetchReports } from '@/lib/api';
+import { fetchCurrentUser, fetchNotificationCount, fetchReports, isAdmin, isPolitician } from '@/lib/api';
 
 export default function Sidebar() {
   const [user, setUser] = useState<{ role?: string; name?: string } | null>(null);
@@ -22,12 +22,11 @@ export default function Sidebar() {
       fetchCurrentUser()
         .then(data => {
           console.log('[Sidebar] ユーザー情報取得成功:', data);
-          const role = data?.role?.toLowerCase();
-          const isAdmin = role === 'admin';
-          console.log(`[Auth Check] Role: ${data?.role}, Normalized: ${role}, Match: ${isAdmin}`);
+          const adminCheck = isAdmin(data?.role);
+          console.log(`[Auth Check] Role: ${data?.role}, IsAdmin: ${adminCheck}`);
           setUser(data);
           // ユーザー情報取得後に通報数を読み込む（管理者の場合）
-          if (isAdmin) {
+          if (adminCheck) {
             loadReportCount();
           }
         })
@@ -45,7 +44,7 @@ export default function Sidebar() {
         loadNotificationCount();
         // userRefを使用して最新のuserを参照
         const currentUser = userRef.current;
-        if (currentUser && currentUser.role?.toLowerCase() === 'admin') {
+        if (currentUser && isAdmin(currentUser.role)) {
           loadReportCount();
         }
       }, 30000);
@@ -89,7 +88,7 @@ export default function Sidebar() {
           <p className="text-sm text-gray-300">ログイン中</p>
           <p className="font-semibold">{user?.name || user?.role || 'ユーザー'}</p>
           <p className="text-xs text-gray-400">
-            {user?.role?.toLowerCase() === 'admin' ? '運営' : user?.role?.toLowerCase() === 'politician' ? '議員' : user?.role || '-'}
+            {isAdmin(user?.role) ? '運営' : isPolitician(user?.role) ? '議員' : user?.role || '-'}
           </p>
         </div>
       )}
@@ -106,11 +105,11 @@ export default function Sidebar() {
           )}
         </Link>
         {/* 投稿分析は管理者または許可された議員が使用可能 */}
-        {(user && (user.role?.toLowerCase() === 'admin' || (user as any)?.allowedEngagement)) && (
+        {(user && (isAdmin(user.role) || (user as any)?.allowedEngagement)) && (
           <Link href="/engagement" className="block hover:bg-gray-700 rounded p-2">投稿分析</Link>
         )}
         {/* 運営(admin)のみが議員登録、全投稿分析、ユーザー管理、通報一覧、通知送信を表示 */}
-        {user && user.role?.toLowerCase() === 'admin' && (
+        {user && isAdmin(user.role) && (
           <>
             <Link href="/users/register-politician" className="block hover:bg-gray-700 rounded p-2">議員登録</Link>
             <Link href="/users" className="block hover:bg-gray-700 rounded p-2">ユーザー管理</Link>
@@ -126,7 +125,7 @@ export default function Sidebar() {
           </>
         )}
         {/* 議員(politician)のみがプロフィール編集と政治資金管理を表示 */}
-        {user && user.role?.toLowerCase() === 'politician' && (
+        {user && isPolitician(user.role) && (
           <>
             <Link href="/politician/profile" className="block hover:bg-gray-700 rounded p-2">プロフィール編集</Link>
             <Link href="/politician/funds" className="block hover:bg-gray-700 rounded p-2">政治資金管理</Link>
@@ -148,7 +147,7 @@ export default function Sidebar() {
               議員ログイン
             </Link>
             {/* politicianログイン時は運営ログインボタンを非表示 */}
-            {(!user || (user as any)?.role?.toLowerCase() !== 'politician') && (
+            {(!user || !isPolitician((user as any)?.role)) && (
               <Link href="/admin/login" className="block hover:bg-gray-700 rounded p-2 text-sm">
                 運営ログイン
               </Link>

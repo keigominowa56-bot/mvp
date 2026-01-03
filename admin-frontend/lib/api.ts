@@ -168,6 +168,26 @@ export type User = {
   allowedEngagement?: boolean;
 };
 
+/**
+ * ユーザーのroleが管理者かどうかを判定（大文字小文字の揺れに対応）
+ * @param role ユーザーのrole（文字列またはundefined）
+ * @returns 管理者の場合true、それ以外false
+ */
+export function isAdmin(role?: string | null): boolean {
+  if (!role) return false;
+  return role.toUpperCase() === 'ADMIN';
+}
+
+/**
+ * ユーザーのroleが議員かどうかを判定（大文字小文字の揺れに対応）
+ * @param role ユーザーのrole（文字列またはundefined）
+ * @returns 議員の場合true、それ以外false
+ */
+export function isPolitician(role?: string | null): boolean {
+  if (!role) return false;
+  return role.toUpperCase() === 'POLITICIAN';
+}
+
 // 投稿一覧取得
 export async function fetchPosts(params?: {
   type?: string;

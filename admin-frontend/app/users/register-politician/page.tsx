@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { registerPolitician, fetchCurrentUser } from '@/lib/api';
+import { registerPolitician, fetchCurrentUser, isAdmin } from '@/lib/api';
 
 export default function RegisterPoliticianPage() {
   const router = useRouter();
@@ -19,11 +19,15 @@ export default function RegisterPoliticianPage() {
     const checkAuth = async () => {
       try {
         const user = await fetchCurrentUser();
-        if (user.role !== 'admin') {
+        const adminCheck = isAdmin(user?.role);
+        console.log(`[RegisterPolitician] Role: ${user?.role}, IsAdmin: ${adminCheck}`);
+        
+        if (!adminCheck) {
           setError('この機能は管理者のみ利用できます');
           setTimeout(() => router.push('/dashboard'), 2000);
         }
       } catch (err: any) {
+        console.error('[RegisterPolitician] Auth check error:', err);
         setError('認証エラー: ログインしてください');
         setTimeout(() => router.push('/admin/login'), 2000);
       } finally {

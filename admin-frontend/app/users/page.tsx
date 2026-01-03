@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchUsers, approveUser, rejectUser, allowEngagement, revokeEngagement } from '@/lib/api';
+import { fetchUsers, approveUser, rejectUser, allowEngagement, revokeEngagement, isPolitician } from '@/lib/api';
 
 type User = {
   id: string;
@@ -112,7 +112,7 @@ export default function UserManagePage() {
                       <button className="bg-red-500 text-white px-2 py-1 text-xs" onClick={() => reject(u.id)}>却下</button>
                     </>
                   )}
-                  {u.role?.toLowerCase() === 'politician' && (
+                  {isPolitician(u.role) && (
                     <>
                       {!u.allowedEngagement ? (
                         <button className="bg-green-600 text-white px-2 py-1 text-xs" onClick={() => allowEngagementForUser(u.id)}>投稿分析許可</button>
