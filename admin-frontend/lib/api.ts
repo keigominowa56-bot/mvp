@@ -7,22 +7,32 @@ const API_BASE = 'https://api.polimee.com';
  * 画像URLを絶対URLに変換
  * 相対パス（/uploads/...）の場合はAPI_BASEと結合
  * 既に絶対URLの場合はそのまま返す
+ * 二重スラッシュを避けるため、パスを正規化する
  * @param url 画像URL（相対パスまたは絶対URL）
  * @returns 絶対URL
  */
 export function getImageUrl(url?: string | null): string {
   if (!url) return '';
+  
   // 既に絶対URLの場合はそのまま返す
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  // 相対パスの場合はAPI_BASEと結合
+  
+  // 相対パスの場合
   // /uploads/... のような形式の場合
   if (url.startsWith('/')) {
-    return `${API_BASE}${url}`;
+    // API_BASEの末尾にスラッシュがないことを確認し、結合
+    const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+    // urlは既に/で始まっているので、そのまま結合
+    return `${base}${url}`;
   }
-  // それ以外もAPI_BASEと結合
-  return `${API_BASE}/${url}`;
+  
+  // ファイル名のみの場合（/uploads/を追加）
+  // API_BASEの末尾にスラッシュがないことを確認
+  const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+  // urlが/で始まっていない場合、/uploads/を追加
+  return `${base}/uploads/${url}`;
 }
 
 /**
