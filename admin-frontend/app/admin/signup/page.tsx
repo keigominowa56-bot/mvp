@@ -9,9 +9,6 @@ export default function AdminSignupPage() {
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // デバッグ：環境変数を確認
-  console.log('🔧 Environment check:');
-  console.log('  - NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,11 +33,6 @@ export default function AdminSignupPage() {
       // バックエンドに管理者登録
       const { apiFetch } = await import('@/lib/api');
       
-      // デバッグ用：実際のリクエストURLをコンソールに出力
-      console.log('🚀 ===== SIGNUP REQUEST =====');
-      console.log('🚀 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-      console.log('🚀 ============================');
-      
       const res = await apiFetch('/api/auth/admin/signup', {
         method: 'POST',
         body: JSON.stringify({ email, password })
@@ -64,7 +56,9 @@ export default function AdminSignupPage() {
       } else if (err.code === 'auth/weak-password') {
         setMsg('パスワードは6文字以上にしてください');
       } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setMsg('サーバーに接続できません。バックエンド（4000番ポート）が起動しているか確認してください');
+        setMsg('サーバーとの通信に失敗しました。時間をおいて再度お試しください。');
+      } else if (err.message && (err.message.includes('既に') || err.message.includes('already') || err.message.includes('登録されています'))) {
+        setMsg('このメールアドレスは既に使用されています');
       } else {
         setMsg(err?.message ?? '登録に失敗しました');
       }

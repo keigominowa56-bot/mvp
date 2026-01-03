@@ -53,6 +53,8 @@ export default function AdminLoginPage() {
         setError('メールアドレスの形式が正しくありません');
       } else if (err.code === 'auth/user-disabled') {
         setError('このアカウントは無効化されています');
+      } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError('サーバーとの通信に失敗しました。時間をおいて再度お試しください。');
       } else {
         setError(err.message || 'ログインに失敗しました');
       }
