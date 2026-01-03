@@ -2,7 +2,8 @@ export async function uploadMedia(file: File, token: string, category: 'post' | 
   const form = new FormData();
   form.append('file', file);
   form.append('category', category);
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+  // APIベースURL（固定値、末尾のスラッシュなし、/apiは含めない）
+  const apiBase = 'https://api.polimee.com';
   const res = await fetch(`${apiBase}/api/media/upload`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },

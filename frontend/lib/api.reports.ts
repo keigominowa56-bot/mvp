@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+// APIベースURL（固定値、末尾のスラッシュなし、/apiは含めない）
+const API_BASE = 'https://api.polimee.com';
 
 export type Report = {
   id: number;

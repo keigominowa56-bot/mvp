@@ -72,11 +72,6 @@ export default function RegisterPage() {
       // 都道府県名も渡す
       const prefectureName = selectedPrefecture;
       const registerUrl = `${API_BASE}/api/auth/register-firebase`;
-      console.log('🚀 ===== REGISTER REQUEST =====');
-      console.log('🚀 Accessing API at:', registerUrl);
-      console.log('🚀 API_BASE:', API_BASE);
-      console.log('🚀 Expected backend:', 'http://localhost:4000');
-      console.log('🚀 ==============================');
 
       const res = await fetch(registerUrl, {
         method: 'POST',

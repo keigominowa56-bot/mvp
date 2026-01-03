@@ -1,6 +1,7 @@
 // Re-generated complete API client (named exports only; explicit export list)
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+// APIベースURL（固定値、末尾のスラッシュなし、/apiは含めない）
+export const API_BASE = 'https://api.polimee.com';
 
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});

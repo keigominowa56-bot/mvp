@@ -26,11 +26,6 @@ export default function LoginPage() {
       const idToken = await userCred.user.getIdToken();
 
       const loginUrl = `${API_BASE}/api/auth/login-firebase`;
-      console.log('🚀 ===== LOGIN REQUEST =====');
-      console.log('🚀 Accessing API at:', loginUrl);
-      console.log('🚀 API_BASE:', API_BASE);
-      console.log('🚀 Expected backend:', 'http://localhost:4000');
-      console.log('🚀 ===========================');
 
       const res = await fetch(loginUrl, {
         method: 'POST',
@@ -90,7 +85,7 @@ export default function LoginPage() {
       } else if (err.code === 'auth/user-disabled') {
         setMsg('このアカウントは無効化されています');
       } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setMsg('サーバーに接続できません。バックエンド（4000番ポート）が起動しているか確認してください');
+        setMsg('サーバーとの通信に失敗しました。時間をおいて再度お試しください。');
       } else {
         setMsg(err?.message ?? 'ログインに失敗しました');
       }
