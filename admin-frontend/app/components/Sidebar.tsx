@@ -27,7 +27,12 @@ export default function Sidebar() {
           setUser(data);
           // ユーザー情報取得後に通報数を読み込む（管理者の場合）
           if (adminCheck) {
-            loadReportCount();
+            try {
+              loadReportCount();
+            } catch (err) {
+              console.error('[Sidebar] 通報数取得エラー（初期化時）:', err);
+              // エラーが発生してもサイドバーは表示を続ける
+            }
           }
         })
         .catch(err => {
@@ -37,15 +42,28 @@ export default function Sidebar() {
         .finally(() => setLoading(false));
       
       // 通知数を取得
-      loadNotificationCount();
+      try {
+        loadNotificationCount();
+      } catch (err) {
+        console.error('[Sidebar] 通知数取得エラー（初期化時）:', err);
+        // エラーが発生してもサイドバーは表示を続ける
+      }
       
       // 定期的に通知数と通報数を更新
       const interval = setInterval(() => {
-        loadNotificationCount();
+        try {
+          loadNotificationCount();
+        } catch (err) {
+          console.error('[Sidebar] 通知数取得エラー（定期更新）:', err);
+        }
         // userRefを使用して最新のuserを参照
         const currentUser = userRef.current;
         if (currentUser && isAdmin(currentUser.role)) {
-          loadReportCount();
+          try {
+            loadReportCount();
+          } catch (err) {
+            console.error('[Sidebar] 通報数取得エラー（定期更新）:', err);
+          }
         }
       }, 30000);
       return () => clearInterval(interval);

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchPosts, fetchCurrentUser, deletePost, isPolitician, type Post, type User } from '@/lib/api';
+import { fetchPosts, fetchCurrentUser, deletePost, isPolitician, getImageUrl, type Post, type User } from '@/lib/api';
 
 export default function DashboardPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -98,15 +98,30 @@ export default function DashboardPage() {
           <div className="space-y-4">
             {posts.map((post) => (
               <div key={post.id} className="border-b pb-4 last:border-b-0">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{post.title}</h3>
                     <span className="inline-block bg-gray-200 rounded px-2 py-1 text-xs text-gray-700 mr-2 mt-1">
                       {post.type}
                     </span>
+                    {/* 画像がある場合は表示 */}
+                    {post.imageUrl && (
+                      <div className="mt-2 mb-2">
+                        <img
+                          src={getImageUrl(post.imageUrl)}
+                          alt={post.title}
+                          className="max-w-full h-auto rounded-lg shadow-sm"
+                          style={{ maxHeight: '300px' }}
+                          onError={(e) => {
+                            // 画像読み込みエラー時は非表示にする
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <p className="text-gray-700 mt-2 line-clamp-2">{post.content}</p>
                   </div>
-                  <div className="flex flex-col items-end ml-4">
+                  <div className="flex flex-col items-end ml-4 flex-shrink-0">
                     <span className="text-sm text-gray-500 mb-2">
                       {new Date(post.createdAt).toLocaleString('ja-JP')}
                     </span>
