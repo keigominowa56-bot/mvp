@@ -69,6 +69,7 @@ export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const res = await fetch(fullUrl, {
     ...init,
     headers,
+    credentials: 'include', // CORSでcredentialsを送信するために必要
   });
   return res;
 }
@@ -115,6 +116,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   const res = await fetch(fullUrl, {
     ...init,
     headers,
+    credentials: 'include', // CORSでcredentialsを送信するために必要
   });
   return res;
 }
@@ -247,6 +249,7 @@ export async function adminLogin(idToken: string) {
       'Authorization': authHeader,
       'Content-Type': 'application/json',
     },
+    credentials: 'include', // CORSでcredentialsを送信するために必要
   });
   
   return unwrap(res);
@@ -428,6 +431,7 @@ export async function uploadMedia(file: File): Promise<{ url: string; path?: str
     method: 'POST',
     headers,
     body: formData,
+    credentials: 'include', // CORSでcredentialsを送信するために必要
   });
   return unwrap<{ url: string; path?: string }>(res);
 }

@@ -33,8 +33,8 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package.json ./package.json
 
-# Create uploads directory
-RUN mkdir -p uploads && chown -R nestjs:nodejs uploads
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads && chmod 777 uploads && chown -R nestjs:nodejs uploads
 
 USER nestjs
 
