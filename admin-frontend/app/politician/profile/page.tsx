@@ -170,7 +170,7 @@ export default function PoliticianProfilePage() {
                   }
                   
                   try {
-                    const data = await uploadMedia(file);
+                    const data = await uploadMedia(file, 'avatar');
                     const imageUrl = data.url || data.path || '';
                     // 画像URLが相対パスの場合はそのまま使用（APIサーバーが返すURLを信頼）
                     const fullUrl = imageUrl.startsWith('http') ? imageUrl : imageUrl;

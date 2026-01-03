@@ -2,9 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createPost } from '@/lib/api';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { createPost, uploadMedia } from '@/lib/api';
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -41,14 +39,21 @@ export default function CreatePostPage() {
     }
   };
 
-  const uploadFile = async (file: File, folder: string): Promise<string> => {
-    const timestamp = Date.now();
-    const fileName = `${folder}/${timestamp}_${file.name}`;
-    const storageRef = ref(storage, fileName);
-    
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+  const uploadFile = async (file: File, category: string): Promise<string> => {
+    try {
+      console.log('[CreatePost] ファイルアップロード開始:', { name: file.name, size: file.size, category });
+      const result = await uploadMedia(file, category);
+      console.log('[CreatePost] ファイルアップロード成功:', result);
+      // バックエンドから返されたURLを使用（相対パスの場合はそのまま使用）
+      const url = result.url || result.path || '';
+      if (!url) {
+        throw new Error('アップロードされたファイルのURLが取得できませんでした');
+      }
+      return url;
+    } catch (error: any) {
+      console.error('[CreatePost] ファイルアップロードエラー:', error);
+      throw new Error(`ファイルのアップロードに失敗しました: ${error.message || '不明なエラー'}`);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,12 +68,12 @@ export default function CreatePostPage() {
 
       // 画像をアップロード
       if (imageFile) {
-        imageUrl = await uploadFile(imageFile, 'images');
+        imageUrl = await uploadFile(imageFile, 'post');
       }
 
       // 動画をアップロード
       if (videoFile) {
-        videoUrl = await uploadFile(videoFile, 'videos');
+        videoUrl = await uploadFile(videoFile, 'post');
       }
 
       setUploading(false);

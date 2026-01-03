@@ -407,15 +407,17 @@ export async function updatePoliticianProfile(data: any): Promise<any> {
 }
 
 // メディアアップロード
-export async function uploadMedia(file: File): Promise<{ url: string; path?: string }> {
+export async function uploadMedia(file: File, category: string = 'post'): Promise<{ url: string; path?: string }> {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('category', category);
   
   const token = localStorage.getItem('auth_token');
   const headers = new Headers();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
+  // FormDataを使用する場合、Content-Typeは自動設定されるため、手動で設定しない
   
   // 絶対URLを構築
   const normalizedPath = normalizeApiPath('/api/media/upload');
