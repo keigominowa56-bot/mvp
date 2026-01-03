@@ -34,8 +34,10 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package.json ./package.json
 
 # Create uploads directory with proper permissions
+# ユーザー切り替え前に確実に権限を設定
 RUN mkdir -p uploads && chmod 777 uploads && chown -R nestjs:nodejs uploads
 
+# 実行ユーザーを設定（CMDの直前で確実に実行されるように）
 USER nestjs
 
 EXPOSE 10000

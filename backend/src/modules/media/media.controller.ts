@@ -90,6 +90,40 @@ export class MediaController {
         }
       }
 
+      // 書き込み権限の確認（ファイル書き込み前に実行）
+      try {
+        await fs.promises.access(uploadsDir, fs.constants.W_OK);
+        console.log('[MediaController] 書き込み権限確認成功:', uploadsDir);
+      } catch (accessError: any) {
+        // 権限情報を詳細にログ出力
+        const stats = fs.statSync(uploadsDir);
+        const currentUid = process.getuid ? process.getuid() : 'N/A';
+        const currentGid = process.getgid ? process.getgid() : 'N/A';
+        const dirMode = (stats.mode & parseInt('777', 8)).toString(8);
+        const dirOwner = stats.uid;
+        const dirGroup = stats.gid;
+        
+        console.error('[MediaController] 書き込み権限エラー:', {
+          error: accessError.message,
+          errorCode: accessError.code,
+          uploadsDir,
+          currentUid,
+          currentGid,
+          dirMode: `0${dirMode}`,
+          dirOwner,
+          dirGroup,
+          stats: {
+            isDirectory: stats.isDirectory(),
+            mode: stats.mode,
+            uid: stats.uid,
+            gid: stats.gid,
+          },
+        });
+        
+        // 権限がない場合でも続行を試みる（chmodで修正できる可能性がある）
+        console.warn('[MediaController] 書き込み権限がないが、続行を試みます...');
+      }
+
       // ファイル名をサニタイズ（危険な文字を削除）
       const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
       const fileName = `${Date.now()}-${sanitizedOriginalName}`;
@@ -97,8 +131,32 @@ export class MediaController {
       
       console.log('[MediaController] ファイルを保存:', filePath);
       
-      // ファイルを書き込み
-      fs.writeFileSync(filePath, file.buffer);
+      // ファイルを書き込み（エラー時は詳細な情報を出力）
+      try {
+        fs.writeFileSync(filePath, file.buffer);
+      } catch (writeError: any) {
+        // 書き込みエラー時の詳細情報
+        const stats = fs.existsSync(uploadsDir) ? fs.statSync(uploadsDir) : null;
+        const currentUid = process.getuid ? process.getuid() : 'N/A';
+        const currentGid = process.getgid ? process.getgid() : 'N/A';
+        
+        console.error('[MediaController] ファイル書き込みエラー:', {
+          error: writeError.message,
+          errorCode: writeError.code,
+          filePath,
+          uploadsDir,
+          currentUid,
+          currentGid,
+          dirExists: fs.existsSync(uploadsDir),
+          dirStats: stats ? {
+            mode: stats.mode,
+            modeOctal: `0${(stats.mode & parseInt('777', 8)).toString(8)}`,
+            uid: stats.uid,
+            gid: stats.gid,
+          } : null,
+        });
+        throw writeError;
+      }
       
       // ファイルの権限を設定（読み書き可能）
       try {

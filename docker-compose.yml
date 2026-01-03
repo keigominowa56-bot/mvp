@@ -27,6 +27,8 @@ services:
     # Nginx経由でアクセスするため、外部ポートは公開しない（必要に応じてコメントアウト）
     # ports:
     #   - "10000:10000"
+    # 適切なユーザーで実行（DockerfileのUSER nestjsと一致: uid 1001）
+    user: "1001:1001"
     env_file: .env
     environment:
       - PORT=10000
