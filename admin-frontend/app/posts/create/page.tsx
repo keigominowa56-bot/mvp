@@ -79,13 +79,15 @@ export default function CreatePostPage() {
       setUploading(false);
 
       // 投稿を作成
-      await createPost({
+      console.log('[CreatePost] 投稿作成開始:', { title, type, imageUrl, videoUrl });
+      const createdPost = await createPost({
         title,
         content,
         type,
         imageUrl: imageUrl || undefined,
         videoUrl: videoUrl || undefined,
       });
+      console.log('[CreatePost] 投稿作成成功:', createdPost);
 
       alert('投稿が成功しました！');
       router.push('/dashboard');
