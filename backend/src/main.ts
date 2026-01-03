@@ -98,7 +98,12 @@ async function bootstrap() {
 
   // CORS設定（credentials: true を使用するため、ワイルドカードは使用不可）
   app.enableCors({
-    origin: 'https://polimee.com', // まずは一般ユーザーサイトを確実に許可
+    origin: [
+      'https://polimee.com',
+      'https://admin.polimee.com', // 管理画面ドメインを確実に許可
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
