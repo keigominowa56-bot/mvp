@@ -103,7 +103,9 @@ export default function PoliticianPage({ params }: { params: Promise<{ id: strin
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4 flex-1">
           {profile.profileImageUrl ? (
-            <img src={profile.profileImageUrl} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" />
+            <img src={getImageUrl(profile.profileImageUrl)} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} />
           ) : (
             <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">
               {(profile.name || '議員').charAt(0)}
