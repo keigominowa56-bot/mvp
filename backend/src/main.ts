@@ -115,9 +115,18 @@ async function bootstrap() {
   
   console.log('[Main] CORS設定:', allowedOrigins);
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // originが許可リストにあるか、あるいはoriginがない（サーバー間通信など）場合に許可
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // ポート設定（Render等の本番環境ではprocess.env.PORTを使用）
