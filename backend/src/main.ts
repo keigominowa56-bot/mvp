@@ -96,13 +96,23 @@ async function bootstrap() {
     prefix: '/uploads',
   });
 
-  // CORS設定
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
+  // CORS設定（credentials: true を使用するため、ワイルドカードは使用不可）
+  const defaultOrigins = [
     'https://polimee.com',
     'https://admin.polimee.com',
     'http://localhost:3000',
     'http://localhost:3001',
   ];
+  
+  // 環境変数から取得し、ワイルドカードを除外
+  let allowedOrigins: string[];
+  if (process.env.CORS_ORIGINS) {
+    const envOrigins = process.env.CORS_ORIGINS.split(',').map(o => o.trim()).filter(o => o && o !== '*');
+    allowedOrigins = envOrigins.length > 0 ? envOrigins : defaultOrigins;
+  } else {
+    allowedOrigins = defaultOrigins;
+  }
+  
   console.log('[Main] CORS設定:', allowedOrigins);
   app.enableCors({
     origin: allowedOrigins,
