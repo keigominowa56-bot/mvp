@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useComments } from '../../../../lib/hooks/useComments';
-import { Comment, deleteComment, apiFetchWithAuth, unwrap, Post } from '../../../../lib/api';
+import { Comment, deleteComment, apiFetchWithAuth, unwrap, Post, getImageUrl } from '../../../../lib/api';
 import { useAuth } from '../../../../contexts/AuthContext';
 
 type Props = { params: Promise<{ id: string }> };
@@ -51,9 +51,12 @@ function CommentItem({ comment, postId, onReply, addComment, mutate, currentUser
         {/* プロフィール画像 */}
         {comment.author?.profileImageUrl ? (
           <img
-            src={comment.author.profileImageUrl}
+            src={getImageUrl(comment.author.profileImageUrl)}
             alt={comment.author.name || comment.author.username || 'ユーザー'}
             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
@@ -204,9 +207,12 @@ export default function CommentsPage({ params }: Props) {
           <div className="flex items-start gap-3 mb-3">
             {post.author?.profileImageUrl ? (
               <img
-                src={post.author.profileImageUrl}
+                src={getImageUrl(post.author.profileImageUrl)}
                 alt={post.author.name || 'ユーザー'}
                 className="w-10 h-10 rounded-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm">

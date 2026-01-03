@@ -22,6 +22,7 @@ const nextConfig = {
   // 画像の外部ドメイン許可（SNSなどの OGP 画像を使う場合に必要）
   images: {
     remotePatterns: [
+      { protocol: 'https', hostname: 'api.polimee.com', pathname: '/uploads/**' }, // アップロード画像
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'pbs.twimg.com' },       // X(Twitter) 画像
       { protocol: 'https', hostname: 'abs.twimg.com' },       // X(Twitter) assets

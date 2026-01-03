@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getMe, updateUserProfile, fetchFollowedUserIds, apiFetchWithAuth } from '../../lib/api';
+import { getMe, updateUserProfile, fetchFollowedUserIds, apiFetchWithAuth, getImageUrl } from '../../lib/api';
 
 const PARTIES = [
   { id: '1', name: '自民党' },
@@ -193,7 +193,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-4">
               {user.profileImageUrl ? (
                 <img 
-                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `https://api.polimee.com${user.profileImageUrl}`} 
+                  src={getImageUrl(user.profileImageUrl)} 
                   alt="プロフィール画像" 
                   className="w-24 h-24 rounded-full object-cover border"
                   onError={(e) => {
@@ -246,9 +246,12 @@ export default function ProfilePage() {
                       >
                         {politician.profileImageUrl ? (
                           <img
-                            src={politician.profileImageUrl}
+                            src={getImageUrl(politician.profileImageUrl)}
                             alt={politician.name || '議員'}
                             className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
                           />
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">
@@ -322,7 +325,9 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div>
               {formData.profileImageUrl ? (
-                <img src={formData.profileImageUrl} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" />
+                <img src={getImageUrl(formData.profileImageUrl)} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }} />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
                   画像なし
@@ -370,9 +375,9 @@ export default function ProfilePage() {
                     }
                     
                     const data = await res.json();
-                    // アップロードされた画像のURLを設定（フルパス）
+                    // アップロードされた画像のURLを設定（getImageUrlで変換）
                     const imageUrl = data.url || data.path || '';
-                    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `https://api.polimee.com${imageUrl}`;
+                    const fullUrl = getImageUrl(imageUrl);
                     setFormData(prev => ({ ...prev, profileImageUrl: fullUrl }));
                     setSuccess('画像をアップロードしました');
                   } catch (err: any) {

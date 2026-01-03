@@ -1,6 +1,6 @@
 'use client';
 import useSWRInfinite from 'swr/infinite';
-import { API_BASE, Post } from '../../lib/api';
+import { API_BASE, Post, getImageUrl } from '../../lib/api';
 
 const PAGE_SIZE = 20;
 const getKey = (pageIndex: number, previousPageData: Post[]) => {
@@ -19,6 +19,20 @@ export default function TimelinePage() {
         <article key={p.id} className="bg-white border rounded p-3">
           <h2 className="font-semibold">{p.title}</h2>
           <p className="text-sm text-gray-500">{new Date(p.createdAt).toLocaleString()}</p>
+          {/* 投稿の画像がある場合は表示 */}
+          {p.imageUrl && (
+            <div className="mt-2 mb-2">
+              <img
+                src={getImageUrl(p.imageUrl)}
+                alt={p.title || '投稿画像'}
+                className="max-w-full h-auto rounded-lg shadow-sm"
+                style={{ maxHeight: '400px' }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
           <p className="mt-2 whitespace-pre-wrap">{p.content}</p>
         </article>
       ))}

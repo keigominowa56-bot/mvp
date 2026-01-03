@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { API_BASE, apiFetchWithAuth } from '../../../lib/api';
+import { API_BASE, apiFetchWithAuth, getImageUrl } from '../../../lib/api';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const PARTIES = [
@@ -66,7 +66,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4 flex-1">
           {profile.profileImageUrl ? (
-            <img src={profile.profileImageUrl} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" />
+            <img src={getImageUrl(profile.profileImageUrl)} alt="プロフィール画像" className="w-24 h-24 rounded-full object-cover border" onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} />
           ) : (
             <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">
               {(profile.name || 'ユーザー').charAt(0)}

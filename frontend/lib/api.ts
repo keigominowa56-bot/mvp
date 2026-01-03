@@ -1,7 +1,42 @@
 // Re-generated complete API client (named exports only; explicit export list)
 
-// APIベースURL（固定値、末尾のスラッシュなし、/apiは含めない）
-export const API_BASE = 'https://api.polimee.com';
+// APIベースURL（環境変数または固定値、末尾のスラッシュなし、/apiは含めない）
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+
+/**
+ * 画像URLを絶対URLに変換
+ * 相対パス（/uploads/...）の場合はAPI_BASEと結合
+ * 既に絶対URLの場合はそのまま返す
+ * 二重スラッシュを避けるため、パスを正規化する
+ * @param url 画像URL（相対パスまたは絶対URL）
+ * @returns 絶対URL
+ */
+export function getImageUrl(url?: string | null): string {
+  if (!url) {
+    return '';
+  }
+  
+  // 既に絶対URLの場合はそのまま返す
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // 相対パスの場合
+  // /uploads/... のような形式の場合
+  if (url.startsWith('/')) {
+    // API_BASEの末尾にスラッシュがないことを確認し、結合
+    const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+    // urlは既に/で始まっているので、そのまま結合
+    // 例: https://api.polimee.com + /uploads/1767...png = https://api.polimee.com/uploads/1767...png
+    return `${base}${url}`;
+  }
+  
+  // ファイル名のみの場合（/uploads/を追加）
+  // API_BASEの末尾にスラッシュがないことを確認
+  const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+  // urlが/で始まっていない場合、/uploads/を追加
+  return `${base}/uploads/${url}`;
+}
 
 export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});

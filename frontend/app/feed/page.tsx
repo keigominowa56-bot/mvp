@@ -6,6 +6,7 @@ import {
   fetchFeed,
   votePost,
   Post,
+  getImageUrl,
 } from '../../lib/api';
 import ReportButton from '../../components/ReportButton';
 import FollowButton from '../../components/FollowButton';
@@ -86,16 +87,22 @@ function FeedPageContent() {
                 p.authorUserId ? (
                   <Link href={(p.author as any)?.role === 'politician' ? `/politicians/${p.authorUserId}` : `/users/${p.authorUserId}`}>
                     <img
-                      src={p.author.profileImageUrl}
+                      src={getImageUrl(p.author.profileImageUrl)}
                       alt={p.author.name || 'ユーザー'}
                       className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   </Link>
                 ) : (
                   <img
-                    src={p.author.profileImageUrl}
+                    src={getImageUrl(p.author.profileImageUrl)}
                     alt={p.author.name || 'ユーザー'}
                     className="w-12 h-12 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
                   />
                 )
               ) : (
@@ -211,6 +218,20 @@ function FeedPageContent() {
                p.type === 'question' ? '質問' :
                p.type === 'news' ? 'ニュース' : p.type}
             </h2>
+            {/* 投稿の画像がある場合は表示 */}
+            {p.imageUrl && (
+              <div className="mt-2 mb-2">
+                <img
+                  src={getImageUrl(p.imageUrl)}
+                  alt={p.title || '投稿画像'}
+                  className="max-w-full h-auto rounded-lg shadow-sm"
+                  style={{ maxHeight: '400px' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             <p className="whitespace-pre-wrap text-gray-800">{p.content}</p>
           </div>
 

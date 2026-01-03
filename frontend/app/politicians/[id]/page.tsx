@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, use } from 'react';
-import { API_BASE, apiFetchWithAuth } from '../../../lib/api';
+import { API_BASE, apiFetchWithAuth, getImageUrl } from '../../../lib/api';
 import FollowButton from '../../../components/FollowButton';
 import { useAuth } from '../../../contexts/AuthContext';
 

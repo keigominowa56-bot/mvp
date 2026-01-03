@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, use } from 'react';
-import { API_BASE, apiFetchWithAuth, unwrap, votePost, fetchComments, createComment } from '../../../lib/api';
+import { API_BASE, apiFetchWithAuth, unwrap, votePost, fetchComments, createComment, getImageUrl } from '../../../lib/api';
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -105,6 +105,20 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       <article className="bg-white border rounded p-4">
         <h1 className="text-2xl font-bold">{post.title}</h1>
         <p className="text-sm text-gray-500">{new Date(post.createdAt).toLocaleString()}</p>
+        {/* 投稿の画像がある場合は表示 */}
+        {post.imageUrl && (
+          <div className="mt-3 mb-3">
+            <img
+              src={getImageUrl(post.imageUrl)}
+              alt={post.title || '投稿画像'}
+              className="max-w-full h-auto rounded-lg shadow-sm"
+              style={{ maxHeight: '500px' }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
         <p className="mt-3 whitespace-pre-wrap">{post.content}</p>
         <div className="mt-3 flex gap-2">
           <button className="rounded bg-green-600 text-white px-3 py-1" onClick={() => onVote('agree')}>賛成</button>
