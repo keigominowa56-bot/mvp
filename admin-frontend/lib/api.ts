@@ -1,7 +1,8 @@
 // Admin Frontend API Client
 
 // APIベースURL（環境変数または固定値、末尾のスラッシュなし、/apiは含めない）
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
+// NEXT_PUBLIC_API_URL と NEXT_PUBLIC_API_BASE_URL の両方をサポート
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.com';
 
 /**
  * 画像URLを絶対URLに変換
@@ -13,13 +14,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.polimee.co
  */
 export function getImageUrl(url?: string | null): string {
   if (!url) {
-    console.log('[getImageUrl] URLが空です');
     return '';
   }
   
   // 既に絶対URLの場合はそのまま返す
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    console.log('[getImageUrl] 既に絶対URL:', url);
     return url;
   }
   
@@ -28,17 +27,16 @@ export function getImageUrl(url?: string | null): string {
   if (url.startsWith('/')) {
     // API_BASEの末尾にスラッシュがないことを確認し、結合
     const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
-    const fullUrl = `${base}${url}`;
-    console.log('[getImageUrl] 相対パスを変換:', { original: url, base, result: fullUrl });
-    return fullUrl;
+    // urlは既に/で始まっているので、そのまま結合
+    // 例: https://api.polimee.com + /uploads/1767...png = https://api.polimee.com/uploads/1767...png
+    return `${base}${url}`;
   }
   
   // ファイル名のみの場合（/uploads/を追加）
   // API_BASEの末尾にスラッシュがないことを確認
   const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
-  const fullUrl = `${base}/uploads/${url}`;
-  console.log('[getImageUrl] ファイル名のみを変換:', { original: url, base, result: fullUrl });
-  return fullUrl;
+  // urlが/で始まっていない場合、/uploads/を追加
+  return `${base}/uploads/${url}`;
 }
 
 /**
