@@ -1,7 +1,14 @@
 import './globals.css';
 import Sidebar from './components/Sidebar';
 
-export const metadata = { title: '議員・運営管理画面' };
+export const metadata = { 
+  title: '議員・運営管理画面',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
