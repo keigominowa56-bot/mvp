@@ -30,7 +30,7 @@ export class Member {
   @Column({ type: 'varchar', length: 64, nullable: true })
   twitterHandle!: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lastTwitterFetch!: Date | null;
 
   // 所属や権限など必要に応じて

@@ -1,27 +1,20 @@
-'use client';
-
 import './globals.css';
-import Link from 'next/link';
-import { AppShell } from '../components/AppShell';
-import { AuthProvider } from '../contexts/AuthContext';
+import ClientLayout from './ClientLayout';
+
+export const metadata = {
+  title: 'Polimee',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja" data-theme="light">
       <body className="min-h-screen bg-gray-50 text-gray-900">
-        <AuthProvider>
-          <header className="sticky top-0 z-50 bg-white border-b">
-            <div className="mx-auto max-w-6xl px-4 py-2 flex items-center justify-between relative">
-              <div className="flex-1"></div>
-              <Link href="/" className="font-bold absolute left-1/2 -translate-x-1/2">Polimee</Link>
-              <div className="flex-1 flex justify-end items-center gap-3">
-                <Link href="/login">ログイン</Link>
-                <Link href="/register" className="rounded bg-blue-600 text-white px-3 py-1">新規登録</Link>
-              </div>
-            </div>
-          </header>
-          <AppShell>{children}</AppShell>
-        </AuthProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

@@ -12,6 +12,6 @@ export class Follow {
   @Column()
   politicianId: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

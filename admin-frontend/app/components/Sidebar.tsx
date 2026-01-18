@@ -126,7 +126,7 @@ export default function Sidebar() {
         {(user && (isAdmin(user.role) || (user as any)?.allowedEngagement)) && (
           <Link href="/engagement" className="block hover:bg-gray-700 rounded p-2">投稿分析</Link>
         )}
-        {/* 運営(admin)のみが議員登録、全投稿分析、ユーザー管理、通報一覧、通知送信を表示 */}
+        {/* 運営(admin)のみが議員登録、全投稿分析、ユーザー管理、通報一覧、通知送信、アンケート回答管理を表示 */}
         {user && isAdmin(user.role) && (
           <>
             <Link href="/users/register-politician" className="block hover:bg-gray-700 rounded p-2">議員登録</Link>
@@ -140,6 +140,7 @@ export default function Sidebar() {
               )}
             </Link>
             <Link href="/notifications/send" className="block hover:bg-gray-700 rounded p-2">通知送信</Link>
+            <Link href="/survey-responses" className="block hover:bg-gray-700 rounded p-2">アンケート回答管理</Link>
           </>
         )}
         {/* 議員(politician)のみがプロフィール編集と政治資金管理を表示 */}

@@ -26,12 +26,12 @@ export class ActivityLog {
   @Column({ type: 'varchar', nullable: true })
   externalId?: string; // external feed id (tweet id 等)
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   publishedAt?: Date; // 外部コンテンツ発生時刻
 
   @ManyToOne(() => Member, (m) => m.activityLogs, { onDelete: 'CASCADE' })
   member: Member;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

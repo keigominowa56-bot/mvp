@@ -22,7 +22,7 @@ export class Policy {
   status!: string;
 
   @Index()
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   publishedAt!: Date | null;
 
   @CreateDateColumn()

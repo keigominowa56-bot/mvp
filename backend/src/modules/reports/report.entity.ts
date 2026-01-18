@@ -20,6 +20,6 @@ export class Report {
   @Column({ nullable: true })
   moderatorId?: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

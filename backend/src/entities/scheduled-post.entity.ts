@@ -38,7 +38,7 @@ export class ScheduledPost {
 
   // 投稿日時
   @Index()
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'datetime' })
   scheduledAt!: Date;
 
   // 投稿内容関連
