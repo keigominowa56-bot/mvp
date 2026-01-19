@@ -4,15 +4,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getAuth } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { app } from '../../../lib/firebase';
 import { PREFECTURES, CITIES_BY_PREF } from '../../../lib/japanLocation';
+import { API_BASE } from '../../../lib/api';
 
 export default function SurveyPage() {
   const router = useRouter();
   const { isLoggedIn, user, ready } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
   
   // フォームデータ
   const [formData, setFormData] = useState({
@@ -49,18 +51,43 @@ export default function SurveyPage() {
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   useEffect(() => {
+    // Firebaseの認証状態を監視
+    const auth = getAuth(app);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('🔥 Firebase認証状態変更:', user ? `ログイン中 (${user.email})` : '未ログイン');
+      setFirebaseUser(user);
+    });
+
     // ログイン状態が確定したらローディングを終了
+    // ただし、トークンが存在する場合は少し待ってから再チェック
     if (ready) {
+      // トークンが存在するがisLoggedInがfalseの場合、少し待ってから再チェック
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (token && !isLoggedIn) {
+        console.log('⚠️ トークンは存在するがisLoggedInがfalse。再チェックを試みます...');
+        // 少し待ってから再チェック（AuthContextが更新される可能性がある）
+        const retryTimeout = setTimeout(() => {
+          setLoading(false);
+        }, 1000);
+        return () => {
+          clearTimeout(retryTimeout);
+          unsubscribe();
+        };
+      }
       setLoading(false);
-      return;
+    } else {
+      // readyがfalseのままの場合、タイムアウトでローディングを終了（最大3秒）
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 3000);
+      
+      return () => {
+        clearTimeout(timeout);
+        unsubscribe();
+      };
     }
     
-    // readyがfalseのままの場合、タイムアウトでローディングを終了（最大3秒）
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 3000);
-    
-    return () => clearTimeout(timeout);
+    return () => unsubscribe();
   }, [isLoggedIn, ready]);
 
   useEffect(() => {
@@ -106,33 +133,183 @@ export default function SurveyPage() {
 
     setSubmitting(true);
     try {
-      const auth = getAuth(app);
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error('ユーザーがログインしていません');
+      console.log('🔍 認証情報取得開始');
+      console.log('  - isLoggedIn:', isLoggedIn);
+      console.log('  - user:', user ? `あり (${user.email})` : 'なし');
+      
+      // まずバックエンドAPIのJWTトークンを確認（isLoggedInがtrueの場合は確実に存在するはず）
+      const backendToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      console.log('  - backendToken:', backendToken ? `あり (${backendToken.substring(0, 20)}...)` : 'なし');
+      
+      let authToken: string | null = null;
+      let uid: string | null = null;
+      let email: string | null = null;
+      let emailVerified: boolean = false;
+
+      // バックエンドAPIのJWTトークンがある場合は、それを使用（優先）
+      if (backendToken) {
+        console.log('✅ バックエンドAPIのJWTトークンを使用します');
+        
+        // バックエンドAPIからユーザー情報を取得
+        try {
+          const meResponse = await fetch(`${API_BASE}/api/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${backendToken}`,
+            },
+          });
+
+          if (meResponse.ok) {
+            const userData = await meResponse.json();
+            authToken = backendToken;
+            uid = userData.id || userData.user?.id || user?.id || null;
+            email = userData.email || userData.user?.email || user?.email || null;
+            emailVerified = true; // バックエンドAPIに登録されているユーザーは認証済みとみなす
+            
+            console.log('✅ バックエンドAPIからユーザー情報取得成功');
+            console.log('  - UserID:', uid);
+            console.log('  - Email:', email);
+          } else {
+            const errorData = await meResponse.json().catch(() => ({}));
+            console.warn('⚠️ バックエンドAPIからユーザー情報取得失敗:', errorData);
+            // トークンが無効な場合は削除
+            if (meResponse.status === 401) {
+              localStorage.removeItem('auth_token');
+              // 401エラーの場合は、匿名回答として処理を続行
+              console.log('⚠️ 認証トークンが無効です。匿名回答として処理します');
+            }
+          }
+        } catch (error) {
+          console.error('❌ バックエンドAPIへのリクエストエラー:', error);
+          // エラーが発生しても、匿名回答として処理を続行
+          console.log('⚠️ エラーが発生しましたが、匿名回答として処理を続行します');
+        }
       }
 
-      const idToken = await currentUser.getIdToken();
+      // バックエンドAPIのJWTトークンが取得できない場合は、Firebaseトークンを試みる
+      if (!authToken) {
+        console.log('⚠️ バックエンドAPIのJWTトークンが使用できません。Firebaseトークンを試みます');
+        const auth = getAuth(app);
+        
+        // Firebaseの認証状態を確実に取得
+        console.log('  - firebaseUser:', firebaseUser ? `あり (${firebaseUser.email})` : 'なし');
+        console.log('  - auth.currentUser:', auth.currentUser ? `あり (${auth.currentUser.email})` : 'なし');
+        
+        // 認証状態が準備されるまで待機
+        await auth.authStateReady();
+        
+        const currentUser = firebaseUser || auth.currentUser;
+        
+        if (currentUser) {
+          try {
+            authToken = await currentUser.getIdToken(true);
+            uid = currentUser.uid;
+            email = currentUser.email;
+            emailVerified = currentUser.emailVerified;
+            console.log('✅ Firebaseトークン取得成功');
+            console.log('  - UID:', uid);
+            console.log('  - Email:', email);
+          } catch (firebaseError) {
+            console.warn('⚠️ Firebaseトークン取得失敗:', firebaseError);
+            // Firebaseトークン取得失敗でも、匿名回答として処理を続行
+            console.log('⚠️ Firebaseトークンが取得できませんでした。匿名回答として処理します');
+          }
+        } else {
+          console.log('⚠️ Firebaseユーザーが存在しません。匿名回答として処理します');
+        }
+      }
+      
+      // 認証トークンがない場合でも送信を許可（匿名回答として処理）
+      console.log('📝 アンケート送信準備完了:');
+      console.log('  - authToken:', authToken ? 'あり' : 'なし（匿名回答）');
+      console.log('  - uid:', uid || 'なし');
+      console.log('  - email:', email || 'なし');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
       
       const response = await fetch('/api/campaign/survey', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers,
         body: JSON.stringify({
           ...formData,
-          uid: currentUser.uid,
-          email: currentUser.email,
-          emailVerified: currentUser.emailVerified,
+          uid: uid || null,
+          email: email || null,
+          emailVerified: emailVerified || false,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'アンケートの送信に失敗しました');
+        console.error('❌ アンケート送信エラー:');
+        console.error('  - Status:', response.status);
+        console.error('  - Error data:', errorData);
+        console.error('  - Response text:', await response.text().catch(() => ''));
+        
+        // 401エラーの場合でも、匿名回答として再試行
+        if (response.status === 401) {
+          console.log('⚠️ 401エラーが発生しました。認証トークンなしで匿名回答として再送信します');
+          
+          // 認証トークンなしで再送信
+          const retryResponse = await fetch('/api/campaign/survey', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...formData,
+              uid: null,
+              email: null,
+              emailVerified: false,
+            }),
+          });
+          
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            console.log('✅ 匿名回答として送信成功:', retryData);
+            
+            // セッションストレージに保存
+            sessionStorage.setItem('pending_survey_response', JSON.stringify({
+              ...formData,
+              submittedAt: new Date().toISOString(),
+            }));
+            
+            const loginUrl = `/login?survey_completed=true&redirect=/campaign/thanks`;
+            alert('アンケートの送信が完了しました。\nログインまたは新規登録をすると、回答があなたのアカウントに紐付けられます。');
+            router.push(loginUrl);
+            return;
+          } else {
+            const retryErrorData = await retryResponse.json().catch(() => ({}));
+            console.error('❌ 匿名回答としての再送信も失敗:', retryErrorData);
+            throw new Error(retryErrorData.message || 'アンケートの送信に失敗しました');
+          }
+        }
+        
+        throw new Error(errorData.message || errorData.error?.message || 'アンケートの送信に失敗しました');
       }
 
+      const responseData = await response.json();
+      console.log('✅ アンケート送信成功:', responseData);
+      
+      // 匿名回答の場合は、ログイン/登録を促す
+      if (responseData.isAnonymous || !authToken) {
+        // アンケートデータをセッションストレージに保存（ログイン後に紐付け可能）
+        sessionStorage.setItem('pending_survey_response', JSON.stringify({
+          ...formData,
+          submittedAt: new Date().toISOString(),
+        }));
+        
+        // ログイン/登録ページにリダイレクト（クエリパラメータでアンケート完了を通知）
+        const loginUrl = `/login?survey_completed=true&redirect=/campaign/thanks`;
+        alert('アンケートの送信が完了しました。\nログインまたは新規登録をすると、回答があなたのアカウントに紐付けられます。');
+        router.push(loginUrl);
+        return;
+      }
+      
+      // ログイン済みの場合は通常通りサンクスページへ
       router.push('/campaign/thanks');
     } catch (error: any) {
       console.error('Survey submission error:', error);
@@ -150,35 +327,8 @@ export default function SurveyPage() {
     );
   }
 
-  // 未ログインの場合
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#001122] to-[#003366] py-12 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">アンケートにご回答いただくには</h1>
-            <p className="text-gray-700 mb-8">
-              アンケートに回答するにはログインが必要です。
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/login"
-                className="bg-[#003366] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#004488] transition-colors"
-              >
-                ログインページへ
-              </Link>
-              <Link
-                href="/register"
-                className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              >
-                新規会員登録（LP）へ戻る
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // ログインしていない場合でもフォームを表示（匿名回答を許可）
+  // ただし、送信後にログイン/登録を促す
 
   // アンケートフォーム
   return (

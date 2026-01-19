@@ -9,6 +9,7 @@ type SurveyResponse = {
   uid: string;
   email: string;
   emailVerified: boolean;
+  isAnonymous?: boolean; // 匿名回答フラグ
   ipAddress: string;
   userAgent: string;
   createdAt: Timestamp | { seconds: number; nanoseconds: number } | null;
@@ -275,7 +276,11 @@ export default function SurveyResponsesPage() {
                         {response.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {response.emailVerified ? (
+                        {response.isAnonymous ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            匿名回答
+                          </span>
+                        ) : response.emailVerified ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             認証済み
                           </span>
@@ -345,16 +350,23 @@ export default function SurveyResponsesPage() {
                   <h3 className="text-sm font-medium text-gray-500 mb-2">基本情報</h3>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="font-medium">メールアドレス:</span> {selectedResponse.email}
+                      <span className="font-medium">メールアドレス:</span> {selectedResponse.email || '匿名'}
                     </div>
                     <div>
-                      <span className="font-medium">認証状態:</span>{' '}
-                      {selectedResponse.emailVerified ? (
+                      <span className="font-medium">回答タイプ:</span>{' '}
+                      {selectedResponse.isAnonymous ? (
+                        <span className="text-gray-600">匿名回答</span>
+                      ) : selectedResponse.emailVerified ? (
                         <span className="text-green-600">認証済み</span>
                       ) : (
                         <span className="text-yellow-600">未認証</span>
                       )}
                     </div>
+                    {selectedResponse.isAnonymous && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        ※ ログイン前に回答された匿名回答です
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium">送信日時:</span> {formatDate(selectedResponse.createdAt)}
                     </div>

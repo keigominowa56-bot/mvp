@@ -1,16 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { app } from '../../lib/firebase';
 import { API_BASE } from '../../lib/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { loginWithToken } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [kycWarning, setKycWarning] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const surveyCompleted = searchParams?.get('survey_completed') === 'true';
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,34 +50,90 @@ export default function LoginPage() {
       console.log('🔑 Login response:', loginData);
       
       if (loginData.token) {
-        localStorage.setItem('auth_token', loginData.token);
-        console.log('✅ Token saved to localStorage');
+        // AuthContextを更新（これによりisLoggedInがtrueになる）
+        await loginWithToken(loginData.token);
+        console.log('✅ Token saved and AuthContext updated');
+        
+        // LocalStorageに保存したトークンを使用してユーザー情報を取得（KYCステータス確認用）
+        console.log('🔍 ユーザー情報取得開始 - token:', loginData.token ? 'あり' : 'なし');
+        const meRes = await fetch(`${API_BASE}/api/auth/me`, { 
+          headers: { 'Authorization': `Bearer ${loginData.token}` },
+          credentials: 'include' 
+        });
+        console.log('🔍 ユーザー情報取得レスポンス - status:', meRes.status, 'ok:', meRes.ok);
+        if (meRes.ok) {
+          const me = await meRes.json();
+          console.log('👤 User info取得成功:', me);
+          const status = me?.kycStatus || me?.user?.kycStatus;
+          if (status !== 'verified') {
+            setKycWarning('KYC 未検証です。アンケート報酬受け取り不可。');
+          }
+        } else {
+          const errorData = await meRes.json().catch(() => ({}));
+          console.error('❌ Failed to fetch user info - status:', meRes.status, 'error:', errorData);
+        }
+        
+        // アンケート完了後のログインの場合、アンケートデータを再送信
+        if (surveyCompleted) {
+          const pendingSurvey = sessionStorage.getItem('pending_survey_response');
+          if (pendingSurvey) {
+            try {
+              const surveyData = JSON.parse(pendingSurvey);
+              console.log('📝 アンケートデータを再送信します:', surveyData);
+              
+              // ユーザー情報を取得（まだ取得していない場合）
+              let userInfo = null;
+              if (meRes.ok) {
+                userInfo = await meRes.json();
+              } else {
+                // 再取得を試みる
+                const retryMeRes = await fetch(`${API_BASE}/api/auth/me`, {
+                  headers: { 'Authorization': `Bearer ${loginData.token}` },
+                  credentials: 'include'
+                });
+                if (retryMeRes.ok) {
+                  userInfo = await retryMeRes.json();
+                }
+              }
+              
+              const surveyResponse = await fetch('/api/campaign/survey', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${loginData.token}`,
+                },
+                body: JSON.stringify({
+                  ...surveyData,
+                  uid: userInfo?.id || userCred.user.uid,
+                  email: userInfo?.email || userCred.user.email,
+                  emailVerified: true,
+                }),
+              });
+              
+              if (surveyResponse.ok) {
+                console.log('✅ アンケートデータの再送信が完了しました');
+                sessionStorage.removeItem('pending_survey_response');
+                // リダイレクト先を確認
+                const redirectTo = searchParams?.get('redirect') || '/campaign/thanks';
+                router.push(redirectTo);
+                return;
+              } else {
+                console.warn('⚠️ アンケートデータの再送信に失敗しましたが、ログインは完了しています');
+              }
+            } catch (surveyError) {
+              console.error('❌ アンケートデータの再送信エラー:', surveyError);
+            }
+          }
+        }
+        
+        // AuthContextが更新された後にリダイレクト
+        const redirectTo = surveyCompleted ? (searchParams?.get('redirect') || '/campaign/thanks') : '/feed';
+        router.push(redirectTo);
       } else {
         console.error('❌ No token in login response');
         setMsg('認証トークンが取得できませんでした');
         return;
       }
-
-      // LocalStorageに保存したトークンを使用してユーザー情報を取得
-      console.log('🔍 ユーザー情報取得開始 - token:', loginData.token ? 'あり' : 'なし');
-      const meRes = await fetch(`${API_BASE}/api/auth/me`, { 
-        headers: { 'Authorization': `Bearer ${loginData.token}` },
-        credentials: 'include' 
-      });
-      console.log('🔍 ユーザー情報取得レスポンス - status:', meRes.status, 'ok:', meRes.ok);
-      if (meRes.ok) {
-        const me = await meRes.json();
-        console.log('👤 User info取得成功:', me);
-        const status = me?.kycStatus || me?.user?.kycStatus;
-        if (status !== 'verified') {
-          setKycWarning('KYC 未検証です。アンケート報酬受け取り不可。');
-        }
-      } else {
-        const errorData = await meRes.json().catch(() => ({}));
-        console.error('❌ Failed to fetch user info - status:', meRes.status, 'error:', errorData);
-      }
-      
-      location.href = '/feed';
 
     } catch (err: any) {
       console.error('❌ Login error:', err);

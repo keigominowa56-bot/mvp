@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -13,6 +14,8 @@ import { API_BASE } from '../../lib/api';
 import { PREFECTURES, CITIES_BY_PREF } from '../../lib/japanLocation';
 
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
+  const surveyCompleted = searchParams?.get('survey_completed') === 'true';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -67,37 +70,140 @@ export default function RegisterPage() {
         await sendEmailVerification(auth.currentUser);
       }
 
-      // サーバDB側にもユーザーを登録（プロフィール情報）
-      const idToken = await userCred.user.getIdToken();
-      // 都道府県名も渡す
-      const prefectureName = selectedPrefecture;
-      const registerUrl = `${API_BASE}/api/auth/register-firebase`;
+      // メール認証が完了するまで待機（ポーリング）
+      setMsg('確認メールを送信しました。メール内リンクをクリックしてアカウント認証を完了してください。認証完了後、自動的に登録を完了します。');
+      
+      // メール認証完了を待機（最大30秒）
+      let attempts = 0;
+      const maxAttempts = 30;
+      const checkInterval = setInterval(async () => {
+        attempts++;
+        try {
+          // Firebaseの認証状態を再取得
+          await userCred.user.reload();
+          if (userCred.user.emailVerified) {
+            clearInterval(checkInterval);
+            // メール認証完了後、サーバDB側にもユーザーを登録
+            const idToken = await userCred.user.getIdToken(true); // 強制的にトークンを更新
+            const prefectureName = selectedPrefecture;
+            const registerUrl = `${API_BASE}/api/auth/register-firebase`;
 
-      const res = await fetch(registerUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          name,
-          username,
-          email,
-          phone,
-          prefecture: prefectureName,
-          prefectureCode,
-          city,
-          birthDate,
-        }),
-      });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'サーバー登録に失敗しました');
-      }
+            const res = await fetch(registerUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`,
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                name,
+                username,
+                email,
+                phone,
+                prefecture: prefectureName,
+                prefectureCode,
+                city,
+                birthDate,
+              }),
+            });
+            
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData.message || 'サーバー登録に失敗しました');
+            }
 
-      setMsg('確認メールを送信しました。メール内リンクをクリックしてアカウント認証を完了してください。');
-      // location.href = '/login'; // 認証前は自動遷移なし
+            // 登録成功後、ログイン処理を実行
+            const loginUrl = `${API_BASE}/api/auth/login-firebase`;
+            const loginRes = await fetch(loginUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+              credentials: 'include',
+              body: JSON.stringify({}),
+            });
+            
+            if (loginRes.ok) {
+              const loginData = await loginRes.json();
+              if (loginData.token) {
+                localStorage.setItem('auth_token', loginData.token);
+                
+                // アンケート完了後の登録の場合、アンケートデータを再送信
+                if (surveyCompleted) {
+                  const pendingSurvey = sessionStorage.getItem('pending_survey_response');
+                  if (pendingSurvey) {
+                    try {
+                      const surveyData = JSON.parse(pendingSurvey);
+                      console.log('📝 アンケートデータを再送信します:', surveyData);
+                      
+                      // ユーザー情報を取得
+                      const meRes = await fetch(`${API_BASE}/api/auth/me`, {
+                        headers: { 'Authorization': `Bearer ${loginData.token}` },
+                        credentials: 'include'
+                      });
+                      
+                      if (meRes.ok) {
+                        const me = await meRes.json();
+                        const surveyResponse = await fetch('/api/campaign/survey', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${loginData.token}`,
+                          },
+                          body: JSON.stringify({
+                            ...surveyData,
+                            uid: me?.id || userCred.user.uid,
+                            email: me?.email || userCred.user.email,
+                            emailVerified: true,
+                          }),
+                        });
+                        
+                        if (surveyResponse.ok) {
+                          console.log('✅ アンケートデータの再送信が完了しました');
+                          sessionStorage.removeItem('pending_survey_response');
+                          setMsg('登録が完了しました。アンケートの回答もあなたのアカウントに紐付けられました。');
+                          setTimeout(() => {
+                            const redirectTo = searchParams?.get('redirect') || '/campaign/thanks';
+                            location.href = redirectTo;
+                          }, 2000);
+                          return;
+                        }
+                      }
+                    } catch (surveyError) {
+                      console.error('❌ アンケートデータの再送信エラー:', surveyError);
+                    }
+                  }
+                }
+                
+                setMsg('登録が完了しました。アンケートページに移動します。');
+                setTimeout(() => {
+                  const redirectTo = surveyCompleted ? (searchParams?.get('redirect') || '/campaign/thanks') : '/surveys';
+                  location.href = redirectTo;
+                }, 2000);
+              } else {
+                setMsg('登録は完了しましたが、ログインに失敗しました。ログインページから再度ログインしてください。');
+                setTimeout(() => {
+                  location.href = '/login';
+                }, 3000);
+              }
+            } else {
+              setMsg('登録は完了しましたが、ログインに失敗しました。ログインページから再度ログインしてください。');
+              setTimeout(() => {
+                location.href = '/login';
+              }, 3000);
+            }
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            setMsg('メール認証の確認がタイムアウトしました。メール内リンクをクリック後、ログインページからログインしてください。');
+          }
+        } catch (err: any) {
+          console.error('メール認証確認エラー:', err);
+        }
+      }, 1000); // 1秒ごとにチェック
+
+      // 30秒後にタイムアウト
+      setTimeout(() => {
+        clearInterval(checkInterval);
+      }, maxAttempts * 1000);
+
     } catch (err: any) {
       // Firebaseエラーコードに応じて日本語メッセージを表示
       if (err.code === 'auth/email-already-in-use') {
@@ -109,7 +215,6 @@ export default function RegisterPage() {
       } else {
         setMsg(err?.message ?? '登録に失敗しました（入力項目をご確認ください）');
       }
-    } finally {
       setLoading(false);
     }
   }

@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { getMe, Me } from '../lib/api';
 
 type Role = 'citizen' | 'politician' | 'admin' | 'user'; // 'user'は'citizen'の互換性のため
@@ -21,8 +21,14 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
+  const userRef = useRef<User | null>(null);
+  
+  // userの変更をrefに同期
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
     if (!token) {
       setUser(null);
@@ -40,11 +46,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setReady(true);
     }
-  }
+  }, []);
 
   useEffect(() => {
     refresh();
-  }, []);
+    
+    // ストレージイベントを監視して、他のタブでログイン/ログアウトされた場合にも対応
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_token' || e.key === 'token') {
+        console.log('🔔 Storage changed, refreshing auth state...');
+        refresh();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 定期的にトークンの有効性をチェック（5分ごと）
+    const interval = setInterval(() => {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      if (token && !userRef.current) {
+        // トークンはあるがユーザー情報がない場合、再試行
+        console.log('🔄 Token exists but user is null, retrying refresh...');
+        refresh();
+      }
+    }, 5 * 60 * 1000); // 5分
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [refresh]);
 
   async function loginWithToken(token: string) {
     localStorage.setItem('auth_token', token);

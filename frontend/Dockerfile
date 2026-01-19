@@ -8,7 +8,8 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Use npm install to update package-lock.json if firebase-admin is missing
+RUN npm install
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -37,6 +38,11 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+# appディレクトリを明示的にコピー（standalone出力に含まれていない場合の対策）
+# standaloneモードでは、appディレクトリは.next/standalone/appに配置される必要がある
+# もし.next/standalone/appが存在しない場合、手動でコピーする
+RUN mkdir -p .next/standalone/app || true
+COPY --from=builder /app/app .next/standalone/app
 
 USER nextjs
 

@@ -49,6 +49,19 @@ const nextConfig = {
     // serverActions: true,
   },
 
+  // サーバーサイド専用パッケージを外部パッケージとして扱う
+  serverExternalPackages: ['firebase-admin'],
+
+  // Webpack設定（Turbopackでもフォールバックとして使用）
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // サーバーサイドでfirebase-adminを外部パッケージとして扱う
+      config.externals = config.externals || [];
+      config.externals.push('firebase-admin');
+    }
+    return config;
+  },
+
   // standalone 出力（next.config.ts から統合）
   output: 'standalone',
 

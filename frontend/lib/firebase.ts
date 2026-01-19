@@ -1,5 +1,6 @@
 // frontend/lib/firebase.ts
 import { initializeApp } from 'firebase/app';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOBQwhVPtlDrC27U1DvD_X-58cTdOTmy4",
@@ -12,3 +13,11 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// Firebase認証の永続化を設定（localStorageに保存）
+if (typeof window !== 'undefined') {
+  const auth = getAuth(app);
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error('Firebase認証の永続化設定エラー:', error);
+  });
+}

@@ -93,6 +93,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime', nullable: true })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
   deletedAt?: Date | null; // 退会日時（論理削除）
 }
