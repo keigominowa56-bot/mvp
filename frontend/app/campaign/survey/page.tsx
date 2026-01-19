@@ -11,7 +11,6 @@ import { PREFECTURES, CITIES_BY_PREF } from '../../../lib/japanLocation';
 export default function SurveyPage() {
   const router = useRouter();
   const { isLoggedIn, user, ready } = useAuth();
-  const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
@@ -50,34 +49,18 @@ export default function SurveyPage() {
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!ready) return;
-
-    async function checkEmailVerified() {
-      if (!isLoggedIn) {
-        setEmailVerified(false);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const auth = getAuth(app);
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          // トークンを再取得して最新の認証状態を確認
-          await currentUser.reload();
-          setEmailVerified(currentUser.emailVerified);
-        } else {
-          setEmailVerified(false);
-        }
-      } catch (error) {
-        console.error('Error checking email verification:', error);
-        setEmailVerified(false);
-      } finally {
-        setLoading(false);
-      }
+    // ログイン状態が確定したらローディングを終了
+    if (ready) {
+      setLoading(false);
+      return;
     }
-
-    checkEmailVerified();
+    
+    // readyがfalseのままの場合、タイムアウトでローディングを終了（最大3秒）
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+    
+    return () => clearTimeout(timeout);
   }, [isLoggedIn, ready]);
 
   useEffect(() => {
@@ -185,34 +168,12 @@ export default function SurveyPage() {
                 ログインページへ
               </Link>
               <Link
-                href="/campaign"
+                href="/register"
                 className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
               >
                 新規会員登録（LP）へ戻る
               </Link>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // メール認証未完了の場合
-  if (!emailVerified) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#001122] to-[#003366] py-12 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-lg p-8">
-            <h1 className="text-2xl font-bold text-yellow-900 mb-4">メール認証が必要です</h1>
-            <p className="text-yellow-800 mb-4">
-              メール認証が完了していません。届いたメールのリンクをクリックして認証を完了させてください。
-            </p>
-            <Link
-              href="/verify"
-              className="inline-block bg-[#003366] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#004488] transition-colors"
-            >
-              認証ページへ
-            </Link>
           </div>
         </div>
       </div>
